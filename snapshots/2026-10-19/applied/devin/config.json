@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "devin": {
+    "org_id": "<redacted>"
+  },
+  "shell": {
+    "setup_complete": true
+  },
+  "theme_mode": "dark",
+  "theme_auto_detect": "always",
+  "agent": {
+    "model": "swe-2-max",
+    "preferred_family_models": {
+      "swe-2": "swe-2-max",
+      "fusion": "fusion-gpt-6-1-sol-max-fast-sidekick-claude-haiku-5-5-medium",
+      "gpt-6-1-sol": "gpt-6-1-sol-max-priority"
+    }
+  },
+  "permissions": {
+    "allow": [
+      "Exec(tmux list-sessions)"
+    ]
+  },
+  "local_tools_bypass_permissions": true
+}

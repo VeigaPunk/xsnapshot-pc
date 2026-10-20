@@ -1,0 +1,11 @@
+[Unit]
+Description=Devin OpenAI shim (GetChatMessage Connect-RPC -> OpenAI-compatible localhost endpoint)
+
+[Service]
+ExecStart=/usr/bin/python3 /home/user/.local/share/devin-shim/shim.py
+Restart=on-failure
+RestartSec=2
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target

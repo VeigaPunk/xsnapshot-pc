@@ -1,0 +1,17 @@
+[Unit]
+Description=glm-flash-shim - OpenAI-compatible 3-leg cascade shim (zai -> devin -> hyper)
+After=network-online.target devin-shim.service
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 %h/.local/share/glm-flash-shim/shim.py
+Restart=on-failure
+RestartSec=2
+Environment=PYTHONUNBUFFERED=1
+# Leg endpoints/keys are overridable here without editing shim.py, e.g.:
+#Environment=GLM_LEG2_KEY=<redacted>
+#Environment=GLM_LEG3_KEY=<redacted>
+#Environment=GLM_SHIM_TIMEOUT=15
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,6 @@
+[Unit]
+Description=cursor-shim healthcheck (restarts cursor-shim on wedge/dead listener)
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/share/cursor-shim/healthcheck.sh

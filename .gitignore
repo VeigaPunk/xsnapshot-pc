@@ -1,0 +1,8 @@
+# Snapshot working output is committed intentionally. These are not.
+*.pyc
+__pycache__/
+.DS_Store
+*.swp
+*.tmp
+/tmp/
+/scratch/

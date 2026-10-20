@@ -1,0 +1,22 @@
+# Static information about the filesystems.
+# See fstab(5) for details.
+
+# <file system> <dir> <type> <options> <dump> <pass>
+# /dev/mapper/root
+UUID=<uuid>	/         	btrfs     	rw,relatime,compress=zstd:3,ssd,space_cache=v2,subvol=/@	0 0
+
+# /dev/mapper/root
+UUID=<uuid>	/home     	btrfs     	rw,relatime,compress=zstd:3,ssd,space_cache=v2,subvol=/@home	0 0
+
+# /dev/mapper/root
+UUID=<uuid>	/var/cache/pacman/pkg	btrfs     	rw,relatime,compress=zstd:3,ssd,space_cache=v2,subvol=/@pkg	0 0
+
+# /dev/mapper/root
+UUID=<uuid>	/var/log  	btrfs     	rw,relatime,compress=zstd:3,ssd,space_cache=v2,subvol=/@log	0 0
+
+# /dev/nvme0n1p1
+UUID=<uuid>      	/boot     	vfat      	rw,relatime,fmask=0077,dmask=0077,codepage=437,iocharset=ascii,shortname=mixed,utf8,errors=remount-ro	0 2
+
+
+# Btrfs swapfile for system hibernation
+/swap/swapfile none swap defaults,pri=0 0 0

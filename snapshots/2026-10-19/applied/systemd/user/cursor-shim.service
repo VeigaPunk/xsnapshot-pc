@@ -1,0 +1,16 @@
+[Unit]
+Description=cursor-shim v2 — OpenAI-compatible API over Cursor's native agent backend
+After=default.target
+
+[Service]
+ExecStart=%h/.local/share/cursor-shim/venv/bin/python %h/.local/share/cursor-shim/shim.py
+WorkingDirectory=%h/.local/share/cursor-shim
+Restart=on-failure
+RestartSec=3
+Environment=PYTHONUNBUFFERED=1
+Environment=CURSOR_SHIM_PORT=8788
+Environment=CURSOR_SHIM_BIND=<ip>
+Environment=CURSOR_SHIM_MAX_CONCURRENT=128
+
+[Install]
+WantedBy=default.target

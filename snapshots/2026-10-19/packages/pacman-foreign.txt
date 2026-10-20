@@ -1,0 +1,16 @@
+android-apktool-bin
+elephant
+elephant-bluetooth
+elephant-calc
+elephant-clipboard
+elephant-desktopapplications
+elephant-files
+elephant-menus
+elephant-providerlist
+elephant-runner
+elephant-symbols
+elephant-todo
+elephant-unicode
+elephant-websearch
+obsidian-cli-inspector
+omarchy-walker

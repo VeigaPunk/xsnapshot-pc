@@ -1,0 +1,47 @@
+[cli]
+installer = "internal"
+
+[marketplace]
+default_skills_installs_purged = true
+official_marketplace_auto_installed = true
+
+[[marketplace.sources]]
+name = "xAI Official"
+git = "https://github.com/xai-org/plugin-marketplace.git"
+
+[ui]
+max_thoughts_width = 120
+yolo = false
+compact_mode = false
+permission_mode = "always-approve"
+fork_secondary_model = "grok-4.7-build-fast"
+
+[features]
+subagent_model_inheritance = true
+
+[models]
+default = "grok-4.7-build-fast"
+default_reasoning_effort = "xhigh"
+
+[mcp_servers.rea]
+command = "npx"
+args = [
+    "-y",
+    "rea-agents@6.5.0",
+    "mcp",
+]
+startup_timeout_sec = 30
+
+[mcp_servers.rea.env]
+GHIDRA_INSTALL_DIR = "/home/user/.local/opt/ghidra_12.1.4_PUBLIC"
+JAVA_HOME = "/usr/lib/jvm/java-21-openjdk"
+REA_JADX_MCP_JAR = "/home/user/.local/opt/jadx-headless-mcp/jadx-headless-mcp-0.7.1-all.jar"
+
+[plugins]
+enabled = [
+    "exa",
+    "unity",
+    "browser-use",
+    "figma",
+    "pstack",
+]

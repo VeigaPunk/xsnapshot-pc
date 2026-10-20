@@ -1,0 +1,4 @@
+[tools]
+node = "latest"
+# Node is managed by fnm (see ~/.bashrc). Intentionally no [tools] here.
+# mise remains installed for omarchy compatibility but manages nothing.

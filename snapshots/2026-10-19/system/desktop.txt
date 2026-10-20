@@ -1,0 +1,2258 @@
+## Environment
+
+XDG_CURRENT_DESKTOP=Hyprland
+XDG_SESSION_TYPE=wayland
+DESKTOP_SESSION=omarchy
+WAYLAND_DISPLAY=wayland-1
+GDK_SCALE=1
+
+## Hyprland version
+
+Hyprland 0.56.2 built from branch v0.56.2 at commit efb50993780079460b0cbed1363e2166a2de1d9f clean ([gha] Nix: update inputs).
+Date: Wed Aug 5 14:13:21 2026
+Tag: v0.56.2, commits: 7661
+
+Libraries:
+Hyprgraphics: built against 0.5.1, system has 0.5.1
+Hyprutils: built against 0.14.1, system has 0.14.2
+Hyprcursor: built against 0.1.13, system has 0.1.13
+Hyprlang: built against 0.6.8, system has 0.6.8
+Aquamarine: built against 0.15.0, system has 0.15.0
+
+Version ABI string: efb50993780079460b0cbed1363e2166a2de1d9f_aq_0.15_hu_0.14_hg_0.5_hc_0.1_hlg_0.6
+no flags were set
+
+## Monitors (sanitized)
+
+Monitor DP-1 (ID 0):
+	3440x1440@99.99700 at 0x0
+	description: LG Electronics LG ULTRAWIDE <redacted>
+	make: LG Electronics
+	model: LG ULTRAWIDE
+	physical size (mm): 800x330
+	serial: <redacted>
+	active workspace: 1 (1)
+	special workspace: 0 ()
+	reserved: 0 26 0 0
+	scale: 1
+	transform: 0
+	focused: yes
+	dpmsStatus: 1
+	vrr: false
+	solitary: 0
+	solitaryBlockedBy: windowed mode,missing candidate
+	activelyTearing: false
+	tearingBlockedBy: next frame is not torn,user settings,missing candidate
+	directScanoutTo: 0
+	directScanoutBlockedBy: user settings,software renders/cursors,missing candidate
+	disabled: false
+	currentFormat: XRGB8888
+	mirrorOf: none
+	availableModes: 3440x1440@100.00Hz 3440x1440@59.99Hz 1920x1080@119.88Hz 1920x1080@60.00Hz 1920x1080@59.94Hz 1280x720@59.94Hz 1024x768@60.00Hz 800x600@60.32Hz 720x480@59.94Hz 640x480@59.94Hz 640x480@59.93Hz 
+	colorManagementPreset: srgb
+	sdrBrightness: 1
+	sdrSaturation: 1
+	sdrMinLuminance: 0.2
+	sdrMaxLuminance: 80
+	hardwareCursorsInUse: false
+
+## Hyprland bindings
+
+bindled
+	modmask: 0
+	submap: 
+	key: XF86AudioRaiseVolume
+	keycode: 0
+	catchall: false
+	description: Volume up
+	dispatcher: exec
+	arg: omarchy-swayosd-client --output-volume raise
+
+bindled
+	modmask: 0
+	submap: 
+	key: XF86AudioLowerVolume
+	keycode: 0
+	catchall: false
+	description: Volume down
+	dispatcher: exec
+	arg: omarchy-swayosd-client --output-volume lower
+
+bindled
+	modmask: 0
+	submap: 
+	key: XF86AudioMute
+	keycode: 0
+	catchall: false
+	description: Mute
+	dispatcher: exec
+	arg: omarchy-swayosd-client --output-volume mute-toggle
+
+bindled
+	modmask: 0
+	submap: 
+	key: XF86AudioMicMute
+	keycode: 0
+	catchall: false
+	description: Mute microphone
+	dispatcher: exec
+	arg: omarchy-audio-input-mute
+
+bindled
+	modmask: 0
+	submap: 
+	key: XF86MonBrightnessUp
+	keycode: 0
+	catchall: false
+	description: Brightness up
+	dispatcher: exec
+	arg: omarchy-brightness-display +5%
+
+bindled
+	modmask: 0
+	submap: 
+	key: XF86MonBrightnessDown
+	keycode: 0
+	catchall: false
+	description: Brightness down
+	dispatcher: exec
+	arg: omarchy-brightness-display 5%-
+
+bindled
+	modmask: 1
+	submap: 
+	key: XF86MonBrightnessUp
+	keycode: 0
+	catchall: false
+	description: Brightness maximum
+	dispatcher: exec
+	arg: omarchy-brightness-display 100%
+
+bindled
+	modmask: 1
+	submap: 
+	key: XF86MonBrightnessDown
+	keycode: 0
+	catchall: false
+	description: Brightness minimum
+	dispatcher: exec
+	arg: omarchy-brightness-display 1%
+
+bindled
+	modmask: 0
+	submap: 
+	key: XF86KbdBrightnessUp
+	keycode: 0
+	catchall: false
+	description: Keyboard brightness up
+	dispatcher: exec
+	arg: omarchy-brightness-keyboard up
+
+bindled
+	modmask: 0
+	submap: 
+	key: XF86KbdBrightnessDown
+	keycode: 0
+	catchall: false
+	description: Keyboard brightness down
+	dispatcher: exec
+	arg: omarchy-brightness-keyboard down
+
+bindld
+	modmask: 0
+	submap: 
+	key: XF86KbdLightOnOff
+	keycode: 0
+	catchall: false
+	description: Keyboard backlight cycle
+	dispatcher: exec
+	arg: omarchy-brightness-keyboard cycle
+
+bindld
+	modmask: 0
+	submap: 
+	key: XF86TouchpadToggle
+	keycode: 0
+	catchall: false
+	description: Toggle touchpad
+	dispatcher: exec
+	arg: omarchy-toggle-touchpad
+
+bindld
+	modmask: 0
+	submap: 
+	key: XF86TouchpadOn
+	keycode: 0
+	catchall: false
+	description: Enable touchpad
+	dispatcher: exec
+	arg: omarchy-toggle-touchpad on
+
+bindld
+	modmask: 0
+	submap: 
+	key: XF86TouchpadOff
+	keycode: 0
+	catchall: false
+	description: Disable touchpad
+	dispatcher: exec
+	arg: omarchy-toggle-touchpad off
+
+bindled
+	modmask: 8
+	submap: 
+	key: XF86AudioRaiseVolume
+	keycode: 0
+	catchall: false
+	description: Volume up precise
+	dispatcher: exec
+	arg: omarchy-swayosd-client --output-volume +1
+
+bindled
+	modmask: 8
+	submap: 
+	key: XF86AudioLowerVolume
+	keycode: 0
+	catchall: false
+	description: Volume down precise
+	dispatcher: exec
+	arg: omarchy-swayosd-client --output-volume -1
+
+bindled
+	modmask: 8
+	submap: 
+	key: XF86MonBrightnessUp
+	keycode: 0
+	catchall: false
+	description: Brightness up precise
+	dispatcher: exec
+	arg: omarchy-brightness-display +1%
+
+bindled
+	modmask: 8
+	submap: 
+	key: XF86MonBrightnessDown
+	keycode: 0
+	catchall: false
+	description: Brightness down precise
+	dispatcher: exec
+	arg: omarchy-brightness-display 1%-
+
+bindld
+	modmask: 0
+	submap: 
+	key: XF86AudioNext
+	keycode: 0
+	catchall: false
+	description: Next track
+	dispatcher: exec
+	arg: omarchy-swayosd-client --playerctl next
+
+bindld
+	modmask: 0
+	submap: 
+	key: XF86AudioPause
+	keycode: 0
+	catchall: false
+	description: Pause
+	dispatcher: exec
+	arg: omarchy-swayosd-client --playerctl play-pause
+
+bindld
+	modmask: 0
+	submap: 
+	key: XF86AudioPlay
+	keycode: 0
+	catchall: false
+	description: Play
+	dispatcher: exec
+	arg: omarchy-swayosd-client --playerctl play-pause
+
+bindld
+	modmask: 0
+	submap: 
+	key: XF86AudioPrev
+	keycode: 0
+	catchall: false
+	description: Previous track
+	dispatcher: exec
+	arg: omarchy-swayosd-client --playerctl previous
+
+bindld
+	modmask: 64
+	submap: 
+	key: XF86AudioMute
+	keycode: 0
+	catchall: false
+	description: Switch audio output
+	dispatcher: exec
+	arg: omarchy-audio-output-switch
+
+bindd
+	modmask: 64
+	submap: 
+	key: C
+	keycode: 0
+	catchall: false
+	description: Universal copy
+	dispatcher: sendshortcut
+	arg: CTRL, Insert, activewindow
+
+bindd
+	modmask: 64
+	submap: 
+	key: V
+	keycode: 0
+	catchall: false
+	description: Universal paste
+	dispatcher: sendshortcut
+	arg: SHIFT, Insert, activewindow
+
+bindd
+	modmask: 64
+	submap: 
+	key: X
+	keycode: 0
+	catchall: false
+	description: Universal cut
+	dispatcher: sendshortcut
+	arg: CTRL, X, activewindow
+
+bindd
+	modmask: 68
+	submap: 
+	key: V
+	keycode: 0
+	catchall: false
+	description: Clipboard manager
+	dispatcher: exec
+	arg: omarchy-launch-walker -m clipboard
+
+bindd
+	modmask: 64
+	submap: 
+	key: W
+	keycode: 0
+	catchall: false
+	description: Close window
+	dispatcher: killactive
+	arg: 
+
+bindd
+	modmask: 12
+	submap: 
+	key: DELETE
+	keycode: 0
+	catchall: false
+	description: Close all windows
+	dispatcher: exec
+	arg: omarchy-hyprland-window-close-all
+
+bindd
+	modmask: 64
+	submap: 
+	key: J
+	keycode: 0
+	catchall: false
+	description: Toggle window split
+	dispatcher: layoutmsg
+	arg: togglesplit
+
+bindd
+	modmask: 64
+	submap: 
+	key: P
+	keycode: 0
+	catchall: false
+	description: Pseudo window
+	dispatcher: pseudo
+	arg: 
+
+bindd
+	modmask: 64
+	submap: 
+	key: T
+	keycode: 0
+	catchall: false
+	description: Toggle window floating/tiling
+	dispatcher: togglefloating
+	arg: 
+
+bindd
+	modmask: 64
+	submap: 
+	key: F
+	keycode: 0
+	catchall: false
+	description: Full screen
+	dispatcher: fullscreen
+	arg: 0
+
+bindd
+	modmask: 68
+	submap: 
+	key: F
+	keycode: 0
+	catchall: false
+	description: Tiled full screen
+	dispatcher: fullscreenstate
+	arg: 0 2
+
+bindd
+	modmask: 72
+	submap: 
+	key: F
+	keycode: 0
+	catchall: false
+	description: Full width
+	dispatcher: fullscreen
+	arg: 1
+
+bindd
+	modmask: 64
+	submap: 
+	key: O
+	keycode: 0
+	catchall: false
+	description: Pop window out (float & pin)
+	dispatcher: exec
+	arg: omarchy-hyprland-window-pop
+
+bindd
+	modmask: 64
+	submap: 
+	key: L
+	keycode: 0
+	catchall: false
+	description: Toggle workspace layout
+	dispatcher: exec
+	arg: omarchy-hyprland-workspace-layout-toggle
+
+bindd
+	modmask: 64
+	submap: 
+	key: LEFT
+	keycode: 0
+	catchall: false
+	description: Focus on left window
+	dispatcher: movefocus
+	arg: l
+
+bindd
+	modmask: 64
+	submap: 
+	key: RIGHT
+	keycode: 0
+	catchall: false
+	description: Focus on right window
+	dispatcher: movefocus
+	arg: r
+
+bindd
+	modmask: 64
+	submap: 
+	key: UP
+	keycode: 0
+	catchall: false
+	description: Focus on above window
+	dispatcher: movefocus
+	arg: u
+
+bindd
+	modmask: 64
+	submap: 
+	key: DOWN
+	keycode: 0
+	catchall: false
+	description: Focus on below window
+	dispatcher: movefocus
+	arg: d
+
+bindd
+	modmask: 64
+	submap: 
+	key: 
+	keycode: 10
+	catchall: false
+	description: Switch to workspace 1
+	dispatcher: workspace
+	arg: 1
+
+bindd
+	modmask: 64
+	submap: 
+	key: 
+	keycode: 11
+	catchall: false
+	description: Switch to workspace 2
+	dispatcher: workspace
+	arg: 2
+
+bindd
+	modmask: 64
+	submap: 
+	key: 
+	keycode: 12
+	catchall: false
+	description: Switch to workspace 3
+	dispatcher: workspace
+	arg: 3
+
+bindd
+	modmask: 64
+	submap: 
+	key: 
+	keycode: 13
+	catchall: false
+	description: Switch to workspace 4
+	dispatcher: workspace
+	arg: 4
+
+bindd
+	modmask: 64
+	submap: 
+	key: 
+	keycode: 14
+	catchall: false
+	description: Switch to workspace 5
+	dispatcher: workspace
+	arg: 5
+
+bindd
+	modmask: 64
+	submap: 
+	key: 
+	keycode: 15
+	catchall: false
+	description: Switch to workspace 6
+	dispatcher: workspace
+	arg: 6
+
+bindd
+	modmask: 64
+	submap: 
+	key: 
+	keycode: 16
+	catchall: false
+	description: Switch to workspace 7
+	dispatcher: workspace
+	arg: 7
+
+bindd
+	modmask: 64
+	submap: 
+	key: 
+	keycode: 17
+	catchall: false
+	description: Switch to workspace 8
+	dispatcher: workspace
+	arg: 8
+
+bindd
+	modmask: 64
+	submap: 
+	key: 
+	keycode: 18
+	catchall: false
+	description: Switch to workspace 9
+	dispatcher: workspace
+	arg: 9
+
+bindd
+	modmask: 64
+	submap: 
+	key: 
+	keycode: 19
+	catchall: false
+	description: Switch to workspace 10
+	dispatcher: workspace
+	arg: 10
+
+bindd
+	modmask: 65
+	submap: 
+	key: 
+	keycode: 10
+	catchall: false
+	description: Move window to workspace 1
+	dispatcher: movetoworkspace
+	arg: 1
+
+bindd
+	modmask: 65
+	submap: 
+	key: 
+	keycode: 11
+	catchall: false
+	description: Move window to workspace 2
+	dispatcher: movetoworkspace
+	arg: 2
+
+bindd
+	modmask: 65
+	submap: 
+	key: 
+	keycode: 12
+	catchall: false
+	description: Move window to workspace 3
+	dispatcher: movetoworkspace
+	arg: 3
+
+bindd
+	modmask: 65
+	submap: 
+	key: 
+	keycode: 13
+	catchall: false
+	description: Move window to workspace 4
+	dispatcher: movetoworkspace
+	arg: 4
+
+bindd
+	modmask: 65
+	submap: 
+	key: 
+	keycode: 14
+	catchall: false
+	description: Move window to workspace 5
+	dispatcher: movetoworkspace
+	arg: 5
+
+bindd
+	modmask: 65
+	submap: 
+	key: 
+	keycode: 15
+	catchall: false
+	description: Move window to workspace 6
+	dispatcher: movetoworkspace
+	arg: 6
+
+bindd
+	modmask: 65
+	submap: 
+	key: 
+	keycode: 16
+	catchall: false
+	description: Move window to workspace 7
+	dispatcher: movetoworkspace
+	arg: 7
+
+bindd
+	modmask: 65
+	submap: 
+	key: 
+	keycode: 17
+	catchall: false
+	description: Move window to workspace 8
+	dispatcher: movetoworkspace
+	arg: 8
+
+bindd
+	modmask: 65
+	submap: 
+	key: 
+	keycode: 18
+	catchall: false
+	description: Move window to workspace 9
+	dispatcher: movetoworkspace
+	arg: 9
+
+bindd
+	modmask: 65
+	submap: 
+	key: 
+	keycode: 19
+	catchall: false
+	description: Move window to workspace 10
+	dispatcher: movetoworkspace
+	arg: 10
+
+bindd
+	modmask: 73
+	submap: 
+	key: 
+	keycode: 10
+	catchall: false
+	description: Move window silently to workspace 1
+	dispatcher: movetoworkspacesilent
+	arg: 1
+
+bindd
+	modmask: 73
+	submap: 
+	key: 
+	keycode: 11
+	catchall: false
+	description: Move window silently to workspace 2
+	dispatcher: movetoworkspacesilent
+	arg: 2
+
+bindd
+	modmask: 73
+	submap: 
+	key: 
+	keycode: 12
+	catchall: false
+	description: Move window silently to workspace 3
+	dispatcher: movetoworkspacesilent
+	arg: 3
+
+bindd
+	modmask: 73
+	submap: 
+	key: 
+	keycode: 13
+	catchall: false
+	description: Move window silently to workspace 4
+	dispatcher: movetoworkspacesilent
+	arg: 4
+
+bindd
+	modmask: 73
+	submap: 
+	key: 
+	keycode: 14
+	catchall: false
+	description: Move window silently to workspace 5
+	dispatcher: movetoworkspacesilent
+	arg: 5
+
+bindd
+	modmask: 73
+	submap: 
+	key: 
+	keycode: 15
+	catchall: false
+	description: Move window silently to workspace 6
+	dispatcher: movetoworkspacesilent
+	arg: 6
+
+bindd
+	modmask: 73
+	submap: 
+	key: 
+	keycode: 16
+	catchall: false
+	description: Move window silently to workspace 7
+	dispatcher: movetoworkspacesilent
+	arg: 7
+
+bindd
+	modmask: 73
+	submap: 
+	key: 
+	keycode: 17
+	catchall: false
+	description: Move window silently to workspace 8
+	dispatcher: movetoworkspacesilent
+	arg: 8
+
+bindd
+	modmask: 73
+	submap: 
+	key: 
+	keycode: 18
+	catchall: false
+	description: Move window silently to workspace 9
+	dispatcher: movetoworkspacesilent
+	arg: 9
+
+bindd
+	modmask: 73
+	submap: 
+	key: 
+	keycode: 19
+	catchall: false
+	description: Move window silently to workspace 10
+	dispatcher: movetoworkspacesilent
+	arg: 10
+
+bindd
+	modmask: 64
+	submap: 
+	key: S
+	keycode: 0
+	catchall: false
+	description: Toggle scratchpad
+	dispatcher: togglespecialworkspace
+	arg: scratchpad
+
+bindd
+	modmask: 72
+	submap: 
+	key: S
+	keycode: 0
+	catchall: false
+	description: Move window to scratchpad
+	dispatcher: movetoworkspacesilent
+	arg: special:scratchpad
+
+bindd
+	modmask: 64
+	submap: 
+	key: TAB
+	keycode: 0
+	catchall: false
+	description: Next workspace
+	dispatcher: workspace
+	arg: e+1
+
+bindd
+	modmask: 65
+	submap: 
+	key: TAB
+	keycode: 0
+	catchall: false
+	description: Previous workspace
+	dispatcher: workspace
+	arg: e-1
+
+bindd
+	modmask: 68
+	submap: 
+	key: TAB
+	keycode: 0
+	catchall: false
+	description: Former workspace
+	dispatcher: workspace
+	arg: previous
+
+bindd
+	modmask: 73
+	submap: 
+	key: LEFT
+	keycode: 0
+	catchall: false
+	description: Move workspace to left monitor
+	dispatcher: movecurrentworkspacetomonitor
+	arg: l
+
+bindd
+	modmask: 73
+	submap: 
+	key: RIGHT
+	keycode: 0
+	catchall: false
+	description: Move workspace to right monitor
+	dispatcher: movecurrentworkspacetomonitor
+	arg: r
+
+bindd
+	modmask: 73
+	submap: 
+	key: UP
+	keycode: 0
+	catchall: false
+	description: Move workspace to up monitor
+	dispatcher: movecurrentworkspacetomonitor
+	arg: u
+
+bindd
+	modmask: 73
+	submap: 
+	key: DOWN
+	keycode: 0
+	catchall: false
+	description: Move workspace to down monitor
+	dispatcher: movecurrentworkspacetomonitor
+	arg: d
+
+bindd
+	modmask: 65
+	submap: 
+	key: LEFT
+	keycode: 0
+	catchall: false
+	description: Swap window to the left
+	dispatcher: swapwindow
+	arg: l
+
+bindd
+	modmask: 65
+	submap: 
+	key: RIGHT
+	keycode: 0
+	catchall: false
+	description: Swap window to the right
+	dispatcher: swapwindow
+	arg: r
+
+bindd
+	modmask: 65
+	submap: 
+	key: UP
+	keycode: 0
+	catchall: false
+	description: Swap window up
+	dispatcher: swapwindow
+	arg: u
+
+bindd
+	modmask: 65
+	submap: 
+	key: DOWN
+	keycode: 0
+	catchall: false
+	description: Swap window down
+	dispatcher: swapwindow
+	arg: d
+
+bindd
+	modmask: 8
+	submap: 
+	key: TAB
+	keycode: 0
+	catchall: false
+	description: Focus on next window
+	dispatcher: cyclenext
+	arg: 
+
+bindd
+	modmask: 9
+	submap: 
+	key: TAB
+	keycode: 0
+	catchall: false
+	description: Focus on previous window
+	dispatcher: cyclenext
+	arg: prev
+
+bindd
+	modmask: 8
+	submap: 
+	key: TAB
+	keycode: 0
+	catchall: false
+	description: Reveal active window on top
+	dispatcher: bringactivetotop
+	arg: 
+
+bindd
+	modmask: 9
+	submap: 
+	key: TAB
+	keycode: 0
+	catchall: false
+	description: Reveal active window on top
+	dispatcher: bringactivetotop
+	arg: 
+
+bindd
+	modmask: 12
+	submap: 
+	key: TAB
+	keycode: 0
+	catchall: false
+	description: Focus on next monitor
+	dispatcher: focusmonitor
+	arg: +1
+
+bindd
+	modmask: 13
+	submap: 
+	key: TAB
+	keycode: 0
+	catchall: false
+	description: Focus on previous monitor
+	dispatcher: focusmonitor
+	arg: -1
+
+bindd
+	modmask: 64
+	submap: 
+	key: 
+	keycode: 20
+	catchall: false
+	description: Expand window left
+	dispatcher: resizeactive
+	arg: -100 0
+
+bindd
+	modmask: 64
+	submap: 
+	key: 
+	keycode: 21
+	catchall: false
+	description: Shrink window left
+	dispatcher: resizeactive
+	arg: 100 0
+
+bindd
+	modmask: 65
+	submap: 
+	key: 
+	keycode: 20
+	catchall: false
+	description: Shrink window up
+	dispatcher: resizeactive
+	arg: 0 -100
+
+bindd
+	modmask: 65
+	submap: 
+	key: 
+	keycode: 21
+	catchall: false
+	description: Expand window down
+	dispatcher: resizeactive
+	arg: 0 100
+
+bindd
+	modmask: 64
+	submap: 
+	key: mouse_down
+	keycode: 0
+	catchall: false
+	description: Scroll active workspace forward
+	dispatcher: workspace
+	arg: e+1
+
+bindd
+	modmask: 64
+	submap: 
+	key: mouse_up
+	keycode: 0
+	catchall: false
+	description: Scroll active workspace backward
+	dispatcher: workspace
+	arg: e-1
+
+bindmd
+	modmask: 64
+	submap: 
+	key: mouse:272
+	keycode: 0
+	catchall: false
+	description: Move window
+	dispatcher: mouse
+	arg: movewindow
+
+bindmd
+	modmask: 64
+	submap: 
+	key: mouse:273
+	keycode: 0
+	catchall: false
+	description: Resize window
+	dispatcher: mouse
+	arg: resizewindow
+
+bindd
+	modmask: 64
+	submap: 
+	key: G
+	keycode: 0
+	catchall: false
+	description: Toggle window grouping
+	dispatcher: togglegroup
+	arg: 
+
+bindd
+	modmask: 72
+	submap: 
+	key: G
+	keycode: 0
+	catchall: false
+	description: Move active window out of group
+	dispatcher: moveoutofgroup
+	arg: 
+
+bindd
+	modmask: 72
+	submap: 
+	key: LEFT
+	keycode: 0
+	catchall: false
+	description: Move window to group on left
+	dispatcher: moveintogroup
+	arg: l
+
+bindd
+	modmask: 72
+	submap: 
+	key: RIGHT
+	keycode: 0
+	catchall: false
+	description: Move window to group on right
+	dispatcher: moveintogroup
+	arg: r
+
+bindd
+	modmask: 72
+	submap: 
+	key: UP
+	keycode: 0
+	catchall: false
+	description: Move window to group on top
+	dispatcher: moveintogroup
+	arg: u
+
+bindd
+	modmask: 72
+	submap: 
+	key: DOWN
+	keycode: 0
+	catchall: false
+	description: Move window to group on bottom
+	dispatcher: moveintogroup
+	arg: d
+
+bindd
+	modmask: 72
+	submap: 
+	key: TAB
+	keycode: 0
+	catchall: false
+	description: Next window in group
+	dispatcher: changegroupactive
+	arg: f
+
+bindd
+	modmask: 73
+	submap: 
+	key: TAB
+	keycode: 0
+	catchall: false
+	description: Previous window in group
+	dispatcher: changegroupactive
+	arg: b
+
+bindd
+	modmask: 68
+	submap: 
+	key: LEFT
+	keycode: 0
+	catchall: false
+	description: Move grouped window focus left
+	dispatcher: changegroupactive
+	arg: b
+
+bindd
+	modmask: 68
+	submap: 
+	key: RIGHT
+	keycode: 0
+	catchall: false
+	description: Move grouped window focus right
+	dispatcher: changegroupactive
+	arg: f
+
+bindd
+	modmask: 72
+	submap: 
+	key: mouse_down
+	keycode: 0
+	catchall: false
+	description: Next window in group
+	dispatcher: changegroupactive
+	arg: f
+
+bindd
+	modmask: 72
+	submap: 
+	key: mouse_up
+	keycode: 0
+	catchall: false
+	description: Previous window in group
+	dispatcher: changegroupactive
+	arg: b
+
+bindd
+	modmask: 72
+	submap: 
+	key: 
+	keycode: 10
+	catchall: false
+	description: Switch to group window 1
+	dispatcher: changegroupactive
+	arg: 1
+
+bindd
+	modmask: 72
+	submap: 
+	key: 
+	keycode: 11
+	catchall: false
+	description: Switch to group window 2
+	dispatcher: changegroupactive
+	arg: 2
+
+bindd
+	modmask: 72
+	submap: 
+	key: 
+	keycode: 12
+	catchall: false
+	description: Switch to group window 3
+	dispatcher: changegroupactive
+	arg: 3
+
+bindd
+	modmask: 72
+	submap: 
+	key: 
+	keycode: 13
+	catchall: false
+	description: Switch to group window 4
+	dispatcher: changegroupactive
+	arg: 4
+
+bindd
+	modmask: 72
+	submap: 
+	key: 
+	keycode: 14
+	catchall: false
+	description: Switch to group window 5
+	dispatcher: changegroupactive
+	arg: 5
+
+bindd
+	modmask: 64
+	submap: 
+	key: 
+	keycode: 61
+	catchall: false
+	description: Cycle monitor scaling
+	dispatcher: exec
+	arg: omarchy-hyprland-monitor-scaling-cycle
+
+bindd
+	modmask: 72
+	submap: 
+	key: 
+	keycode: 61
+	catchall: false
+	description: Cycle monitor scaling backwards
+	dispatcher: exec
+	arg: omarchy-hyprland-monitor-scaling-cycle --reverse
+
+bindd
+	modmask: 64
+	submap: 
+	key: SPACE
+	keycode: 0
+	catchall: false
+	description: Launch apps
+	dispatcher: exec
+	arg: omarchy-launch-walker
+
+bindd
+	modmask: 68
+	submap: 
+	key: E
+	keycode: 0
+	catchall: false
+	description: Emoji picker
+	dispatcher: exec
+	arg: omarchy-launch-walker -m symbols
+
+bindd
+	modmask: 68
+	submap: 
+	key: C
+	keycode: 0
+	catchall: false
+	description: Capture menu
+	dispatcher: exec
+	arg: omarchy-menu capture
+
+bindd
+	modmask: 68
+	submap: 
+	key: O
+	keycode: 0
+	catchall: false
+	description: Toggle menu
+	dispatcher: exec
+	arg: omarchy-menu toggle
+
+bindd
+	modmask: 68
+	submap: 
+	key: H
+	keycode: 0
+	catchall: false
+	description: Hardware menu
+	dispatcher: exec
+	arg: omarchy-menu hardware
+
+bindd
+	modmask: 72
+	submap: 
+	key: SPACE
+	keycode: 0
+	catchall: false
+	description: Omarchy menu
+	dispatcher: exec
+	arg: omarchy-menu
+
+bindd
+	modmask: 65
+	submap: 
+	key: 
+	keycode: 201
+	catchall: false
+	description: Omarchy menu
+	dispatcher: exec
+	arg: omarchy-menu
+
+bindd
+	modmask: 64
+	submap: 
+	key: ESCAPE
+	keycode: 0
+	catchall: false
+	description: System menu
+	dispatcher: exec
+	arg: omarchy-menu system
+
+bindld
+	modmask: 0
+	submap: 
+	key: XF86PowerOff
+	keycode: 0
+	catchall: false
+	description: Power menu
+	dispatcher: exec
+	arg: omarchy-menu system
+
+bindd
+	modmask: 64
+	submap: 
+	key: K
+	keycode: 0
+	catchall: false
+	description: Show key bindings
+	dispatcher: exec
+	arg: omarchy-menu-keybindings
+
+bindd
+	modmask: 0
+	submap: 
+	key: XF86Calculator
+	keycode: 0
+	catchall: false
+	description: Calculator
+	dispatcher: exec
+	arg: gnome-calculator
+
+bindd
+	modmask: 65
+	submap: 
+	key: SPACE
+	keycode: 0
+	catchall: false
+	description: Toggle top bar
+	dispatcher: exec
+	arg: omarchy-toggle-waybar
+
+bindd
+	modmask: 68
+	submap: 
+	key: SPACE
+	keycode: 0
+	catchall: false
+	description: Theme background menu
+	dispatcher: exec
+	arg: omarchy-menu background
+
+bindd
+	modmask: 69
+	submap: 
+	key: SPACE
+	keycode: 0
+	catchall: false
+	description: Theme menu
+	dispatcher: exec
+	arg: omarchy-menu theme
+
+bindd
+	modmask: 64
+	submap: 
+	key: BACKSPACE
+	keycode: 0
+	catchall: false
+	description: Toggle window transparency
+	dispatcher: exec
+	arg: omarchy-hyprland-window-transparency-toggle
+
+bindd
+	modmask: 65
+	submap: 
+	key: BACKSPACE
+	keycode: 0
+	catchall: false
+	description: Toggle window gaps
+	dispatcher: exec
+	arg: omarchy-hyprland-window-gaps-toggle
+
+bindd
+	modmask: 68
+	submap: 
+	key: BACKSPACE
+	keycode: 0
+	catchall: false
+	description: Toggle single-window square aspect
+	dispatcher: exec
+	arg: omarchy-hyprland-window-single-square-aspect-toggle
+
+bindd
+	modmask: 64
+	submap: 
+	key: COMMA
+	keycode: 0
+	catchall: false
+	description: Dismiss last notification
+	dispatcher: exec
+	arg: makoctl dismiss
+
+bindd
+	modmask: 65
+	submap: 
+	key: COMMA
+	keycode: 0
+	catchall: false
+	description: Dismiss all notifications
+	dispatcher: exec
+	arg: makoctl dismiss --all
+
+bindd
+	modmask: 68
+	submap: 
+	key: COMMA
+	keycode: 0
+	catchall: false
+	description: Toggle silencing notifications
+	dispatcher: exec
+	arg: omarchy-toggle-notification-silencing
+
+bindd
+	modmask: 72
+	submap: 
+	key: COMMA
+	keycode: 0
+	catchall: false
+	description: Invoke last notification
+	dispatcher: exec
+	arg: makoctl invoke
+
+bindd
+	modmask: 73
+	submap: 
+	key: COMMA
+	keycode: 0
+	catchall: false
+	description: Restore last notification
+	dispatcher: exec
+	arg: makoctl restore
+
+bindd
+	modmask: 68
+	submap: 
+	key: I
+	keycode: 0
+	catchall: false
+	description: Toggle locking on idle
+	dispatcher: exec
+	arg: omarchy-toggle-idle
+
+bindd
+	modmask: 68
+	submap: 
+	key: N
+	keycode: 0
+	catchall: false
+	description: Toggle nightlight
+	dispatcher: exec
+	arg: omarchy-toggle-nightlight
+
+bindd
+	modmask: 68
+	submap: 
+	key: Delete
+	keycode: 0
+	catchall: false
+	description: Toggle laptop display
+	dispatcher: exec
+	arg: omarchy-hyprland-monitor-internal toggle
+
+bindd
+	modmask: 76
+	submap: 
+	key: Delete
+	keycode: 0
+	catchall: false
+	description: Toggle laptop display mirroring
+	dispatcher: exec
+	arg: omarchy-hyprland-monitor-internal-mirror toggle
+
+bindl
+	modmask: 0
+	submap: 
+	key: switch:on:Lid Switch
+	keycode: 0
+	catchall: false
+	description: 
+	dispatcher: exec
+	arg: omarchy-hw-external-monitors && omarchy-hyprland-monitor-internal off
+
+bindl
+	modmask: 0
+	submap: 
+	key: switch:off:Lid Switch
+	keycode: 0
+	catchall: false
+	description: 
+	dispatcher: exec
+	arg: omarchy-hyprland-monitor-internal on
+
+bindd
+	modmask: 0
+	submap: 
+	key: PRINT
+	keycode: 0
+	catchall: false
+	description: Screenshot
+	dispatcher: exec
+	arg: omarchy-capture-screenshot
+
+bindd
+	modmask: 8
+	submap: 
+	key: PRINT
+	keycode: 0
+	catchall: false
+	description: Screenrecording
+	dispatcher: exec
+	arg: omarchy-menu screenrecord
+
+bindd
+	modmask: 64
+	submap: 
+	key: PRINT
+	keycode: 0
+	catchall: false
+	description: Color picker
+	dispatcher: exec
+	arg: pkill hyprpicker || hyprpicker -a
+
+bindd
+	modmask: 68
+	submap: 
+	key: PRINT
+	keycode: 0
+	catchall: false
+	description: Extract text (OCR) from screenshot
+	dispatcher: exec
+	arg: omarchy-capture-text-extraction
+
+bindd
+	modmask: 68
+	submap: 
+	key: S
+	keycode: 0
+	catchall: false
+	description: Share
+	dispatcher: exec
+	arg: omarchy-menu share
+
+bindd
+	modmask: 68
+	submap: 
+	key: PERIOD
+	keycode: 0
+	catchall: false
+	description: Transcode
+	dispatcher: exec
+	arg: omarchy-transcode
+
+bindd
+	modmask: 68
+	submap: 
+	key: R
+	keycode: 0
+	catchall: false
+	description: Set reminder
+	dispatcher: exec
+	arg: omarchy-menu reminder-set
+
+bindd
+	modmask: 76
+	submap: 
+	key: R
+	keycode: 0
+	catchall: false
+	description: Show reminders
+	dispatcher: exec
+	arg: omarchy-reminder show
+
+bindd
+	modmask: 69
+	submap: 
+	key: R
+	keycode: 0
+	catchall: false
+	description: Clear reminders
+	dispatcher: exec
+	arg: omarchy-reminder clear
+
+bindd
+	modmask: 76
+	submap: 
+	key: T
+	keycode: 0
+	catchall: false
+	description: Show time
+	dispatcher: exec
+	arg: notify-send -u low "    $(date +"%A %H:%M  ·  %d %B %Y  ·  Week %V")"
+
+bindd
+	modmask: 76
+	submap: 
+	key: B
+	keycode: 0
+	catchall: false
+	description: Show battery remaining
+	dispatcher: exec
+	arg: notify-send -u low "$(omarchy-battery-status)"
+
+bindd
+	modmask: 76
+	submap: 
+	key: W
+	keycode: 0
+	catchall: false
+	description: Show weather
+	dispatcher: exec
+	arg: notify-send -u low "$(omarchy-weather-status)"
+
+bindd
+	modmask: 68
+	submap: 
+	key: A
+	keycode: 0
+	catchall: false
+	description: Audio controls
+	dispatcher: exec
+	arg: omarchy-launch-audio
+
+bindd
+	modmask: 68
+	submap: 
+	key: B
+	keycode: 0
+	catchall: false
+	description: Bluetooth controls
+	dispatcher: exec
+	arg: omarchy-launch-bluetooth
+
+bindd
+	modmask: 68
+	submap: 
+	key: W
+	keycode: 0
+	catchall: false
+	description: Wifi controls
+	dispatcher: exec
+	arg: omarchy-launch-wifi
+
+bindd
+	modmask: 68
+	submap: 
+	key: T
+	keycode: 0
+	catchall: false
+	description: Activity
+	dispatcher: exec
+	arg: omarchy-launch-tui btop
+
+bindd
+	modmask: 68
+	submap: 
+	key: X
+	keycode: 0
+	catchall: false
+	description: Toggle dictation
+	dispatcher: exec
+	arg: voxtype record toggle
+
+bindd
+	modmask: 0
+	submap: 
+	key: F9
+	keycode: 0
+	catchall: false
+	description: Start dictation (push-to-talk)
+	dispatcher: exec
+	arg: voxtype record start
+
+bindrd
+	modmask: 0
+	submap: 
+	key: F9
+	keycode: 0
+	catchall: false
+	description: Stop dictation (push-to-talk)
+	dispatcher: exec
+	arg: voxtype record stop
+
+bindd
+	modmask: 68
+	submap: 
+	key: Z
+	keycode: 0
+	catchall: false
+	description: Zoom in
+	dispatcher: exec
+	arg: hyprctl keyword cursor:zoom_factor $(hyprctl getoption cursor:zoom_factor -j | jq '.float + 1')
+
+bindd
+	modmask: 76
+	submap: 
+	key: Z
+	keycode: 0
+	catchall: false
+	description: Reset zoom
+	dispatcher: exec
+	arg: hyprctl keyword cursor:zoom_factor 1
+
+bindd
+	modmask: 68
+	submap: 
+	key: L
+	keycode: 0
+	catchall: false
+	description: Lock system
+	dispatcher: exec
+	arg: omarchy-system-lock
+
+bindd
+	modmask: 64
+	submap: 
+	key: RETURN
+	keycode: 0
+	catchall: false
+	description: Terminal
+	dispatcher: exec
+	arg: uwsm-app -- xdg-terminal-exec --dir="$(omarchy-cmd-terminal-cwd)"
+
+bindd
+	modmask: 72
+	submap: 
+	key: RETURN
+	keycode: 0
+	catchall: false
+	description: Tmux
+	dispatcher: exec
+	arg: uwsm-app -- xdg-terminal-exec --dir="$(omarchy-cmd-terminal-cwd)" bash -c "tmux attach || tmux new -s Work"
+
+bindd
+	modmask: 65
+	submap: 
+	key: RETURN
+	keycode: 0
+	catchall: false
+	description: Browser
+	dispatcher: exec
+	arg: omarchy-launch-browser
+
+bindd
+	modmask: 65
+	submap: 
+	key: F
+	keycode: 0
+	catchall: false
+	description: File manager
+	dispatcher: exec
+	arg: uwsm-app -- nautilus --new-window
+
+bindd
+	modmask: 73
+	submap: 
+	key: F
+	keycode: 0
+	catchall: false
+	description: File manager (cwd)
+	dispatcher: exec
+	arg: uwsm-app -- nautilus --new-window "$(omarchy-cmd-terminal-cwd)"
+
+bindd
+	modmask: 65
+	submap: 
+	key: B
+	keycode: 0
+	catchall: false
+	description: Browser
+	dispatcher: exec
+	arg: omarchy-launch-browser
+
+bindd
+	modmask: 73
+	submap: 
+	key: B
+	keycode: 0
+	catchall: false
+	description: Browser (private)
+	dispatcher: exec
+	arg: omarchy-launch-browser --private
+
+bindd
+	modmask: 65
+	submap: 
+	key: M
+	keycode: 0
+	catchall: false
+	description: Music
+	dispatcher: exec
+	arg: omarchy-launch-or-focus spotify
+
+bindd
+	modmask: 73
+	submap: 
+	key: M
+	keycode: 0
+	catchall: false
+	description: Music TUI
+	dispatcher: exec
+	arg: omarchy-launch-or-focus-tui cliamp
+
+bindd
+	modmask: 65
+	submap: 
+	key: N
+	keycode: 0
+	catchall: false
+	description: Editor
+	dispatcher: exec
+	arg: omarchy-launch-editor
+
+bindd
+	modmask: 65
+	submap: 
+	key: D
+	keycode: 0
+	catchall: false
+	description: Docker
+	dispatcher: exec
+	arg: omarchy-launch-tui lazydocker
+
+bindd
+	modmask: 65
+	submap: 
+	key: G
+	keycode: 0
+	catchall: false
+	description: Signal
+	dispatcher: exec
+	arg: omarchy-launch-or-focus ^signal$ "uwsm-app -- signal-desktop"
+
+bindd
+	modmask: 65
+	submap: 
+	key: O
+	keycode: 0
+	catchall: false
+	description: Obsidian
+	dispatcher: exec
+	arg: omarchy-launch-or-focus ^obsidian$ "uwsm-app -- obsidian"
+
+bindd
+	modmask: 65
+	submap: 
+	key: W
+	keycode: 0
+	catchall: false
+	description: Typora
+	dispatcher: exec
+	arg: uwsm-app -- typora --enable-wayland-ime
+
+bindd
+	modmask: 65
+	submap: 
+	key: SLASH
+	keycode: 0
+	catchall: false
+	description: Passwords
+	dispatcher: exec
+	arg: uwsm-app -- 1password
+
+bindd
+	modmask: 65
+	submap: 
+	key: A
+	keycode: 0
+	catchall: false
+	description: ChatGPT
+	dispatcher: exec
+	arg: omarchy-launch-webapp "https://chatgpt.com"
+
+bindd
+	modmask: 73
+	submap: 
+	key: A
+	keycode: 0
+	catchall: false
+	description: Grok
+	dispatcher: exec
+	arg: omarchy-launch-webapp "https://grok.com"
+
+bindd
+	modmask: 65
+	submap: 
+	key: C
+	keycode: 0
+	catchall: false
+	description: Calendar
+	dispatcher: exec
+	arg: omarchy-launch-webapp "https://app.hey.com/calendar/weeks/"
+
+bindd
+	modmask: 65
+	submap: 
+	key: E
+	keycode: 0
+	catchall: false
+	description: Email
+	dispatcher: exec
+	arg: omarchy-launch-webapp "https://app.hey.com"
+
+bindd
+	modmask: 65
+	submap: 
+	key: Y
+	keycode: 0
+	catchall: false
+	description: YouTube
+	dispatcher: exec
+	arg: omarchy-launch-webapp "https://youtube.com/"
+
+bindd
+	modmask: 73
+	submap: 
+	key: G
+	keycode: 0
+	catchall: false
+	description: WhatsApp
+	dispatcher: exec
+	arg: omarchy-launch-or-focus-webapp WhatsApp "https://web.whatsapp.com/"
+
+bindd
+	modmask: 69
+	submap: 
+	key: G
+	keycode: 0
+	catchall: false
+	description: Google Messages
+	dispatcher: exec
+	arg: omarchy-launch-or-focus-webapp "Google Messages" "https://messages.google.com/web/conversations"
+
+bindd
+	modmask: 65
+	submap: 
+	key: P
+	keycode: 0
+	catchall: false
+	description: Google Photos
+	dispatcher: exec
+	arg: omarchy-launch-or-focus-webapp "Google Photos" "https://photos.google.com/"
+
+bindd
+	modmask: 65
+	submap: 
+	key: X
+	keycode: 0
+	catchall: false
+	description: X
+	dispatcher: exec
+	arg: omarchy-launch-webapp "https://x.com/"
+
+bindd
+	modmask: 73
+	submap: 
+	key: X
+	keycode: 0
+	catchall: false
+	description: X Post
+	dispatcher: exec
+	arg: omarchy-launch-webapp "https://x.com/compose/post"
+
+## Input devices
+
+mice:
+	Mouse at 55b5ede98cb0:
+		sony-interactive-entertainment-dualsense-wireless-controller-touchpad
+			default speed: 0.00000
+			scroll factor: -1.00
+	Mouse at 55b5ede99110:
+		razer-razer-deathadder-v2
+			default speed: 0.00000
+			scroll factor: -1.00
+	Mouse at 55b5edf164c0:
+		razer-razer-deathadder-v2-keyboard-1
+			default speed: 0.00000
+			scroll factor: -1.00
+	Mouse at 55b5edfc7e70:
+		hp--inc-hyperx-alloy-origins-core-consumer-control-1
+			default speed: 0.00000
+			scroll factor: -1.00
+	Mouse at 55b5edf76a10:
+		hp--inc-hyperx-alloy-origins-core-mouse
+			default speed: 0.00000
+			scroll factor: -1.00
+
+
+Keyboards:
+	Keyboard at 55b5ed739f60:
+		yubico-yubikey-otp+fido+ccid
+			rules: r "", m "", l "br", v "", o "compose:caps"
+			active layout index: 0
+			active keymap: Portuguese (Brazil)
+			capsLock: no
+			numLock: yes
+			main: no
+	Keyboard at 55b5ed739bf0:
+		razer-razer-deathadder-v2-keyboard
+			rules: r "", m "", l "br", v "", o "compose:caps"
+			active layout index: 0
+			active keymap: Portuguese (Brazil)
+			capsLock: no
+			numLock: yes
+			main: no
+	Keyboard at 55b5edee8cf0:
+		razer-razer-deathadder-v2-1
+			rules: r "", m "", l "br", v "", o "compose:caps"
+			active layout index: 0
+			active keymap: Portuguese (Brazil)
+			capsLock: no
+			numLock: yes
+			main: no
+	Keyboard at 55b5edf2ced0:
+		hp--inc-hyperx-alloy-origins-core
+			rules: r "", m "", l "br", v "", o "compose:caps"
+			active layout index: 0
+			active keymap: Portuguese (Brazil)
+			capsLock: no
+			numLock: yes
+			main: no
+	Keyboard at 55b5edf530f0:
+		hp--inc-hyperx-alloy-origins-core-consumer-control
+			rules: r "", m "", l "br", v "", o "compose:caps"
+			active layout index: 0
+			active keymap: Portuguese (Brazil)
+			capsLock: no
+			numLock: yes
+			main: no
+	Keyboard at 55b5edf76e70:
+		hp--inc-hyperx-alloy-origins-core-keypad
+			rules: r "", m "", l "br", v "", o "compose:caps"
+			active layout index: 0
+			active keymap: Portuguese (Brazil)
+			capsLock: no
+			numLock: yes
+			main: no
+	Keyboard at 55b5edfb8e60:
+		video-bus
+			rules: r "", m "", l "br", v "", o "compose:caps"
+			active layout index: 0
+			active keymap: Portuguese (Brazil)
+			capsLock: no
+			numLock: yes
+			main: no
+	Keyboard at 55b5ee03a590:
+		power-button
+			rules: r "", m "", l "br", v "", o "compose:caps"
+			active layout index: 0
+			active keymap: Portuguese (Brazil)
+			capsLock: no
+			numLock: yes
+			main: no
+	Keyboard at 55b5ee03f000:
+		power-button-1
+			rules: r "", m "", l "br", v "", o "compose:caps"
+			active layout index: 0
+			active keymap: Portuguese (Brazil)
+			capsLock: no
+			numLock: yes
+			main: no
+	Keyboard at 55b5ee845ef0:
+		hl-virtual-keyboard-fcitx5
+			rules: r "", m "", l "br", v "", o "compose:caps"
+			active layout index: 0
+			active keymap: Portuguese (Brazil)
+			capsLock: no
+			numLock: yes
+			main: yes
+
+
+Tablets:
+
+
+Touch:
+
+
+Switches:
+
+## Waybar
+
+Waybar v0.15.0
+
+## Theme
+
+Matte Black
+
+## Locale
+
+System Locale: LANG=en_US.UTF-8
+    VC Keymap: br-abnt2
+   X11 Layout: br
+    X11 Model: abnt2
+  X11 Options: terminate:ctrl_alt_bksp
+
+## Time
+
+               Local time: Mon 2026-10-19 21:13:24 -03
+           Universal time: Tue 2026-10-20 00:13:24 UTC
+                 RTC time: Tue 2026-10-20 00:13:24
+                Time zone: America/Sao_Paulo (-03, -0300)
+System clock synchronized: yes
+              NTP service: active
+          RTC in local TZ: no
+
+## Fonts
+
+Adwaita Mono
+Adwaita Sans
+Font Awesome 7 Brands
+Font Awesome 7 Free
+Font Awesome 7 Free,Font Awesome 7 Free Solid
+Font Awesome v4 Compatibility
+JetBrainsMono Nerd Font Mono,JetBrainsMono NFM
+JetBrainsMono Nerd Font Mono,JetBrainsMono NFM,JetBrainsMono NFM ExtraBold
+JetBrainsMono Nerd Font Mono,JetBrainsMono NFM,JetBrainsMono NFM ExtraLight
+JetBrainsMono Nerd Font Mono,JetBrainsMono NFM,JetBrainsMono NFM Light
+JetBrainsMono Nerd Font Mono,JetBrainsMono NFM,JetBrainsMono NFM Medium
+JetBrainsMono Nerd Font Mono,JetBrainsMono NFM,JetBrainsMono NFM SemiBold
+JetBrainsMono Nerd Font Mono,JetBrainsMono NFM,JetBrainsMono NFM Thin
+JetBrainsMono Nerd Font Propo,JetBrainsMono NFP
+JetBrainsMono Nerd Font Propo,JetBrainsMono NFP,JetBrainsMono NFP ExtraBold
+JetBrainsMono Nerd Font Propo,JetBrainsMono NFP,JetBrainsMono NFP ExtraLight
+JetBrainsMono Nerd Font Propo,JetBrainsMono NFP,JetBrainsMono NFP Light
+JetBrainsMono Nerd Font Propo,JetBrainsMono NFP,JetBrainsMono NFP Medium
+JetBrainsMono Nerd Font Propo,JetBrainsMono NFP,JetBrainsMono NFP SemiBold
+JetBrainsMono Nerd Font Propo,JetBrainsMono NFP,JetBrainsMono NFP Thin
+JetBrainsMono Nerd Font,JetBrainsMono NF
+JetBrainsMono Nerd Font,JetBrainsMono NF,JetBrainsMono NF ExtraBold
+JetBrainsMono Nerd Font,JetBrainsMono NF,JetBrainsMono NF ExtraLight
+JetBrainsMono Nerd Font,JetBrainsMono NF,JetBrainsMono NF Light
+JetBrainsMono Nerd Font,JetBrainsMono NF,JetBrainsMono NF Medium
+JetBrainsMono Nerd Font,JetBrainsMono NF,JetBrainsMono NF SemiBold
+JetBrainsMono Nerd Font,JetBrainsMono NF,JetBrainsMono NF Thin
+JetBrainsMonoNL Nerd Font Mono,JetBrainsMonoNL NFM
+JetBrainsMonoNL Nerd Font Mono,JetBrainsMonoNL NFM,JetBrainsMonoNL NFM ExtraBold
+JetBrainsMonoNL Nerd Font Mono,JetBrainsMonoNL NFM,JetBrainsMonoNL NFM ExtraLight
+JetBrainsMonoNL Nerd Font Mono,JetBrainsMonoNL NFM,JetBrainsMonoNL NFM Light
+JetBrainsMonoNL Nerd Font Mono,JetBrainsMonoNL NFM,JetBrainsMonoNL NFM Medium
+JetBrainsMonoNL Nerd Font Mono,JetBrainsMonoNL NFM,JetBrainsMonoNL NFM SemiBold
+JetBrainsMonoNL Nerd Font Mono,JetBrainsMonoNL NFM,JetBrainsMonoNL NFM Thin
+JetBrainsMonoNL Nerd Font Propo,JetBrainsMonoNL NFP
+JetBrainsMonoNL Nerd Font Propo,JetBrainsMonoNL NFP,JetBrainsMonoNL NFP ExtraBold
+JetBrainsMonoNL Nerd Font Propo,JetBrainsMonoNL NFP,JetBrainsMonoNL NFP ExtraLight
+JetBrainsMonoNL Nerd Font Propo,JetBrainsMonoNL NFP,JetBrainsMonoNL NFP Light
+JetBrainsMonoNL Nerd Font Propo,JetBrainsMonoNL NFP,JetBrainsMonoNL NFP Medium
+JetBrainsMonoNL Nerd Font Propo,JetBrainsMonoNL NFP,JetBrainsMonoNL NFP SemiBold
+JetBrainsMonoNL Nerd Font Propo,JetBrainsMonoNL NFP,JetBrainsMonoNL NFP Thin
+JetBrainsMonoNL Nerd Font,JetBrainsMonoNL NF
+JetBrainsMonoNL Nerd Font,JetBrainsMonoNL NF,JetBrainsMonoNL NF ExtraBold
+JetBrainsMonoNL Nerd Font,JetBrainsMonoNL NF,JetBrainsMonoNL NF ExtraLight
+JetBrainsMonoNL Nerd Font,JetBrainsMonoNL NF,JetBrainsMonoNL NF Light
+JetBrainsMonoNL Nerd Font,JetBrainsMonoNL NF,JetBrainsMonoNL NF Medium
+JetBrainsMonoNL Nerd Font,JetBrainsMonoNL NF,JetBrainsMonoNL NF SemiBold
+JetBrainsMonoNL Nerd Font,JetBrainsMonoNL NF,JetBrainsMonoNL NF Thin
+Liberation Mono
+Liberation Sans
+Liberation Serif
+Noto Color Emoji
+Noto Fangsong KSS Rotated
+Noto Fangsong KSS Vertical
+Noto Kufi Arabic
+Noto Kufi Arabic,Noto Kufi Arabic Black
+Noto Kufi Arabic,Noto Kufi Arabic Light
+Noto Kufi Arabic,Noto Kufi Arabic Medium
+Noto Kufi Arabic,Noto Kufi Arabic Thin
+Noto Music
+Noto Naskh Arabic
+Noto Naskh Arabic UI
+Noto Naskh Arabic UI,Noto Naskh Arabic UI Medium
+Noto Naskh Arabic,Noto Naskh Arabic Medium
+Noto Nastaliq Urdu
+Noto Rashi Hebrew
+Noto Rashi Hebrew,Noto Rashi Hebrew Blk
+Noto Rashi Hebrew,Noto Rashi Hebrew Light
+Noto Rashi Hebrew,Noto Rashi Hebrew Med
+Noto Rashi Hebrew,Noto Rashi Hebrew Thin
+Noto Sans
+Noto Sans Adlam
+Noto Sans Adlam Unjoined
+Noto Sans Anatolian Hieroglyphs
+Noto Sans Arabic
+Noto Sans Arabic UI
+Noto Sans Arabic UI,Noto Sans Arabic UI Bk
+Noto Sans Arabic UI,Noto Sans Arabic UI Lt
+Noto Sans Arabic UI,Noto Sans Arabic UI Md
+Noto Sans Arabic UI,Noto Sans Arabic UI Th
+
+## PipeWire / WirePlumber
+
+PipeWire 'pipewire-0' [1.6.8, user@plazir27, cookie:<redacted>]
+ └─ Clients:
+        32. xdg-desktop-portal                  [1.6.8, user@plazir27, pid:1894]
+        33. WirePlumber                         [1.6.8, user@plazir27, pid:1957]
+        39. xdg-desktop-portal-hyprland         [1.6.8, user@plazir27, pid:1973]
+        43. WirePlumber [client]                [1.6.8, user@plazir27, pid:1957]
+        57. pipewire                            [1.6.8, user@plazir27, pid:2594]
+        58. waybar                              [1.6.8, user@plazir27, pid:1724]
+       106. Chromium input                      [1.6.8, user@plazir27, pid:103516]
+       107. Chromium input                      [1.6.8, user@plazir27, pid:990755]
+       108. Chromium input                      [1.6.8, user@plazir27, pid:1037786]
+       109. wpctl                               [1.6.8, user@plazir27, pid:3321467]
+
+Audio
+ ├─ Devices:
+ │      44. GB205 High Definition Audio Controller [alsa]
+ │      45. Radeon High Definition Audio Controller [alsa]
+ │      59. USB Audio                           [alsa]
+ │      60. DualSense wireless controller (PS5) [alsa]
+ │  
+ ├─ Sinks:
+ │  *   52. GB205 High Definition Audio Controller Digital Stereo (HDMI) [LG ULTRAWIDE] [vol: 0.40]
+ │      61. DualSense wireless controller (PS5) Direct DualSense Wireless Controller [vol: 0.40]
+ │      63. USB Audio S/PDIF Output             [vol: 0.40]
+ │      64. USB Audio Speakers                  [vol: 1.00]
+ │      65. USB Audio Front Headphones          [vol: 1.00]
+ │  
+ ├─ Sources:
+ │  *   62. DualSense wireless controller (PS5) Direct DualSense Wireless Controller [vol: 1.00]
+ │      66. USB Audio Line Input                [vol: 1.33]
+ │      67. USB Audio Microphone                [vol: 1.00]
+ │  
+ ├─ Filters:
+ │  
+ └─ Streams:
+
+Video
+ ├─ Devices:
+ │  
+ ├─ Sinks:
+ │  
+ ├─ Sources:
+ │  
+ ├─ Filters:
+ │  
+ └─ Streams:
+
+Settings
+ └─ Default Configured Devices:
+         0. Audio/Sink    alsa_output.pci-0000_01_00.1.hdmi-stereo
+         1. Audio/Source  alsa_input.usb-Generic_USB_Audio-00.HiFi__Line__source

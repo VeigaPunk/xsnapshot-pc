@@ -1,0 +1,102 @@
+## Interfaces
+
+lo               UNKNOWN        <mac> <LOOPBACK,UP,LOWER_UP> 
+enp7s0           UP             <mac> <BROADCAST,MULTICAST,UP,LOWER_UP> 
+wlan0            DOWN           <mac> <NO-CARRIER,BROADCAST,MULTICAST,UP> 
+docker0          DOWN           <mac> <NO-CARRIER,BROADCAST,MULTICAST,UP>
+
+## Routes (sanitized)
+
+default via <ip> dev enp7s0 proto dhcp src <ip> metric 100 
+<ip>/16 dev docker0 proto kernel scope link src <ip> linkdown 
+<ip> via <ip> dev enp7s0 proto dhcp src <ip> metric 100 
+<ip> via <ip> dev enp7s0 proto dhcp src <ip> metric 100 
+<ip>/24 dev enp7s0 proto kernel scope link src <ip> metric 100 
+<ip> dev enp7s0 proto dhcp scope link src <ip> metric 100
+
+## Listening sockets
+
+Netid State  Recv-Q Send-Q                     Local Address:Port  Peer Address:PortProcess
+udp   UNCONN 0      0                             <ip>:53         <ip>:*   
+udp   UNCONN 0      0                             <ip>:53         <ip>:*   
+udp   UNCONN 0      0                          <ip>%lo:53         <ip>:*   
+udp   UNCONN 0      0                            <ip>:5353       <ip>:*    users:(("chromium",pid=990234,fd=97))
+udp   UNCONN 0      0                            <ip>:5353       <ip>:*    users:(("chromium",pid=1036967,fd=34))
+udp   UNCONN 0      0                                <ip>:5353       <ip>:*   
+udp   UNCONN 0      0                                <ip>:5355       <ip>:*   
+udp   UNCONN 0      0      <ipv6>%enp7s0:546           [<ipv6>]:*   
+udp   UNCONN 0      0                                   [<ipv6>]:5353          [<ipv6>]:*   
+udp   UNCONN 0      0                                   [<ipv6>]:5355          [<ipv6>]:*   
+tcp   LISTEN 0      4096                           <ip>:631        <ip>:*   
+tcp   LISTEN 0      10                             <ip>:34315      <ip>:*    users:(("chromium",pid=1036936,fd=74))
+tcp   LISTEN 0      4096                       <ip>%lo:53         <ip>:*   
+tcp   LISTEN 0      4096                             <ip>:5355       <ip>:*   
+tcp   LISTEN 0      4096                          <ip>:53         <ip>:*   
+tcp   LISTEN 0      4096                           <ip>:39703      <ip>:*   
+tcp   LISTEN 0      5                              <ip>:8790       <ip>:*    users:(("python3",pid=1560,fd=3))
+tcp   LISTEN 0      512                            <ip>:8791       <ip>:*    users:(("python3",pid=1558,fd=3))
+tcp   LISTEN 0      5                              <ip>:8788       <ip>:*    users:(("python",pid=748382,fd=3))
+tcp   LISTEN 0      5                              <ip>:8789       <ip>:*    users:(("python3",pid=1556,fd=3))
+tcp   LISTEN 0      256                            <ip>:8787       <ip>:*    users:(("python3",pid=1557,fd=3))
+tcp   LISTEN 0      5                              <ip>:8796       <ip>:*    users:(("python3",pid=1038838,fd=3))
+tcp   LISTEN 0      5                              <ip>:8795       <ip>:*    users:(("python3",pid=656505,fd=3))
+tcp   LISTEN 0      512                            <ip>:8793       <ip>:*    users:(("python3",pid=1559,fd=3))
+tcp   LISTEN 0      512                            <ip>:44275      <ip>:*    users:(("omp",pid=998226,fd=40))
+tcp   LISTEN 0      512                            <ip>:45509      <ip>:*    users:(("omp",pid=3171089,fd=54))
+tcp   LISTEN 0      4096                          <ip>:53         <ip>:*   
+tcp   LISTEN 0      4096                                [<ipv6>]:5355          [<ipv6>]:*   
+tcp   LISTEN 0      4096                               [<ipv6>]:631           [<ipv6>]:*
+
+## Resolver
+
+Global
+           Protocols: +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+    resolv.conf mode: stub
+  Current DNS Server: <redacted>
+Fallback DNS Servers: <redacted>
+                      <ip>#cloudflare-dns.com
+                      <ipv6>#cloudflare-dns.com <ip>#dns.google
+                      <ipv6>#dns.google
+
+Link 2 (enp7s0)
+    Current Scopes: DNS LLMNR/IPv4 LLMNR/IPv6
+         Protocols: +DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+Current DNS Server: <redacted>
+       DNS Servers: <redacted>
+                    <ipv6>
+     Default Route: yes
+
+Link 4 (wlan0)
+    Current Scopes: none
+         Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+     Default Route: no
+
+Link 5 (docker0)
+    Current Scopes: none
+         Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+     Default Route: no
+
+## Firewall
+
+Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), deny (routed)
+New profiles: skip
+
+To                         Action      From
+--                         ------      ----
+53317/udp                  ALLOW IN    Anywhere                  
+53317/tcp                  ALLOW IN    Anywhere                  
+<ip> 53/udp          ALLOW IN    <ip>/12              # allow-docker-dns
+<ip> 53/udp          ALLOW IN    <ip>/16             # allow-docker-dns
+53317/udp (v6)             ALLOW IN    Anywhere (v6)             
+53317/tcp (v6)             ALLOW IN    Anywhere (v6)
+
+## rfkill
+
+0: hci0: Bluetooth
+	Soft blocked: no
+	Hard blocked: no
+1: phy0: Wireless LAN
+	Soft blocked: no
+	Hard blocked: no

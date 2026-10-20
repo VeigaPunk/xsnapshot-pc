@@ -1,0 +1,18 @@
+[Unit]
+Description=OpenAI->Antigravity translation shim for kimi-code
+After=network-online.target
+
+[Service]
+Type=simple
+Environment=ANTIGRAVITY_PORT=8796
+Environment=ANTIGRAVITY_UPSTREAM=daily-cloudcode-pa.googleapis.com
+Environment=ANTIGRAVITY_TOKEN_CMD=/home/user/.local/bin/antigravity-oauth-token
+Environment=ANTIGRAVITY_MAX_CONCURRENT=64
+# PATH must include ~/.local/bin so the token helper can exec `omp auth export`
+Environment=PATH=/home/user/.local/bin:/usr/local/bin:/usr/bin
+ExecStart=/usr/bin/python3 /home/user/.local/share/antigravity-shim/shim.py
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

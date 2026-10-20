@@ -1,0 +1,10 @@
+[Unit]
+Description=Probe AI CLI usage limits into cache
+
+[Service]
+Type=oneshot
+TimeoutStartSec=180
+Nice=10
+Environment=PATH=%h/.local/bin:%h/.bun/bin:/usr/local/bin:/usr/bin
+EnvironmentFile=-%h/.config/ai-usage/env
+ExecStart=%h/.local/bin/ai-usage refresh

@@ -1,0 +1,111 @@
+## lsblk
+
+NAME          SIZE TYPE  FSTYPE      MOUNTPOINTS           ROTA MODEL                  TRAN
+sda          23.9G disk  iso9660                              1 ProductCode            usb
+|-sda1        7.4G part  iso9660                              1                        
+`-sda2         23M part  vfat                                 1                        
+sr0          21.5G rom   iso9660                              1 ProductCode            usb
+zram0           4G disk  swap        [SWAP]                   0                        
+nvme0n1     931.5G disk                                       0 WD_BLACK SN8100 1000GB nvme
+|-nvme0n1p1     2G part  vfat        /boot                    0                        nvme
+`-nvme0n1p2 929.5G part  crypto_LUKS                          0                        nvme
+  `-root    929.5G crypt btrfs       /var/log                 0                        
+                                     /var/cache/pacman/pkg                             
+                                     /home                                             
+                                     /
+
+## df -hT
+
+Filesystem       Type      Size  Used Avail Use% Mounted on
+efivarfs         efivarfs  256K   73K  179K  29% /sys/firmware/efi/efivars
+/dev/mapper/root btrfs     930G  241G  684G  27% /
+/dev/mapper/root btrfs     930G  241G  684G  27% /home
+/dev/mapper/root btrfs     930G  241G  684G  27% /var/cache/pacman/pkg
+/dev/mapper/root btrfs     930G  241G  684G  27% /var/log
+/dev/nvme0n1p1   vfat      2.0G  279M  1.8G  14% /boot
+
+## findmnt
+
+/proc proc proc rw,nosuid,nodev,noexec,relatime
+/sys sys sysfs rw,nosuid,nodev,noexec,relatime
+/dev dev devtmpfs rw,nosuid,relatime,size=15665644k,nr_inodes=3916411,mode=755,inode64,huge=advise
+/run run tmpfs rw,nosuid,nodev,relatime,mode=755,inode64,huge=advise
+/sys/firmware/efi/efivars efivarfs efivarfs rw,nosuid,nodev,noexec,relatime
+<dev> devpts devpts rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000
+/ <dev> btrfs rw,relatime,compress=zstd:3,ssd,space_cache=v2,subvolid=256,subvol=/@
+/sys/kernel/security securityfs securityfs rw,nosuid,nodev,noexec,relatime
+<dev> tmpfs tmpfs rw,nosuid,nodev,inode64,huge=advise,usrquota
+/sys/fs/cgroup cgroup2 cgroup2 rw,nosuid,nodev,noexec,relatime,nsdelegate,memory_recursiveprot,memory_hugetlb_accounting
+/sys/fs/pstore none pstore rw,nosuid,nodev,noexec,relatime
+/sys/fs/bpf bpf bpf rw,nosuid,nodev,noexec,relatime,mode=700
+/proc/sys/fs/binfmt_misc systemd-1 autofs rw,relatime,fd=43,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=36319
+/run/credentials/systemd-journald.service none tmpfs ro,nosuid,nodev,noexec,relatime,nosymfollow,size=1024k,nr_inodes=1024,mode=700,inode64,huge=advise,noswap
+/sys/kernel/config configfs configfs rw,nosuid,nodev,noexec,relatime
+/sys/fs/fuse/connections fusectl fusectl rw,nosuid,nodev,noexec,relatime
+<dev> mqueue mqueue rw,nosuid,nodev,noexec,relatime
+/sys/kernel/debug debugfs debugfs rw,nosuid,nodev,noexec,relatime
+/sys/kernel/tracing tracefs tracefs rw,nosuid,nodev,noexec,relatime
+<dev> hugetlbfs hugetlbfs rw,nosuid,nodev,relatime,pagesize=2M
+/proc/sys/fs/binfmt_misc binfmt_misc binfmt_misc rw,nosuid,nodev,noexec,relatime
+/run/credentials/systemd-resolved.service none tmpfs ro,nosuid,nodev,noexec,relatime,nosymfollow,size=1024k,nr_inodes=1024,mode=700,inode64,huge=advise,noswap
+/run/credentials/systemd-networkd.service none tmpfs ro,nosuid,nodev,noexec,relatime,nosymfollow,size=1024k,nr_inodes=1024,mode=700,inode64,huge=advise,noswap
+/tmp tmpfs tmpfs rw,nosuid,nodev,size=15860892k,nr_inodes=1048576,inode64,huge=advise,usrquota
+/home <dev> btrfs rw,relatime,compress=zstd:3,ssd,space_cache=v2,subvolid=257,subvol=/@home
+/var/cache/pacman/pkg <dev> btrfs rw,relatime,compress=zstd:3,ssd,space_cache=v2,subvolid=259,subvol=/@pkg
+/var/log <dev> btrfs rw,relatime,compress=zstd:3,ssd,space_cache=v2,subvolid=258,subvol=/@log
+/boot <dev> vfat rw,relatime,fmask=0077,dmask=0077,codepage=437,iocharset=ascii,shortname=mixed,utf8,errors=remount-ro
+/run/user/1000 tmpfs tmpfs rw,nosuid,nodev,relatime,size=3172176k,nr_inodes=793044,mode=700,uid=1000,gid=1000,inode64,huge=advise
+/run/user/1000/gvfs gvfsd-fuse fuse.gvfsd-fuse rw,nosuid,nodev,relatime,user_id=1000,group_id=1000
+/run/user/1000/doc portal fuse.portal rw,nosuid,nodev,relatime,user_id=1000,group_id=1000
+/tmp/.mount_appimaRx8Ebo Grok_Bot_0.70.2.AppImage fuse.Grok_Bot_0.70.2.AppImage ro,nosuid,nodev,relatime,user_id=1000,group_id=1000
+
+## swapon
+
+NAME           TYPE       SIZE PRIO
+/swap/swapfile file      30.3G    0
+/dev/zram0     partition    4G  100
+
+## zramctl
+
+NAME       ALGORITHM DISKSIZE DATA COMPR TOTAL STREAMS MOUNTPOINT
+/dev/zram0 zstd            4G 3.3G  1.4G  1.5G         [SWAP]
+
+## btrfs usage
+
+Overall:
+    Device size:		 929.50GiB
+    Device allocated:		 279.02GiB
+    Device unallocated:		 650.47GiB
+    Device missing:		     0.00B
+    Device slack:		     0.00B
+    Used:			 240.38GiB
+    Free (estimated):		 683.57GiB	(min: 358.34GiB)
+    Free (statfs, df):		 683.57GiB
+    Data ratio:			      1.00
+    Metadata ratio:		      2.00
+    Global reserve:		 512.00MiB	(used: 0.00B)
+    Multiple profiles:		        no
+
+Data,single: Size:255.01GiB, Used:221.91GiB (87.02%)
+
+Metadata,DUP: Size:12.00GiB, Used:9.24GiB (76.97%)
+
+System,DUP: Size:8.00MiB, Used:48.00KiB (0.59%)
+
+## snapper
+
+Config | Subvolume
+-------+----------
+
+## LUKS root
+
+/dev/mapper/root is active and is in use.
+  type:    LUKS2
+  cipher:  aes-xts-plain64
+  keysize: 512 [bits]
+  key location: keyring
+  device:  /dev/nvme0n1p2
+  sector size:  512 [bytes]
+  offset:  32768 [512-byte units] (16777216 [bytes])
+  size:    1949292544 [512-byte units] (998037782528 [bytes])
+  mode:    read/write

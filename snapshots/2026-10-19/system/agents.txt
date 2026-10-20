@@ -1,0 +1,37 @@
+OMP agent definitions: 13
+Devin agent definitions: 28
+Agent skills with SKILL.md: 2
+Devin theme: dark
+Devin default model: swe-2-max
+
+OMP model roles:
+- default: anthropic/claude-opus-5-5:max
+- m_antigravity: google-antigravity/gemini-3.8-flash:high
+- m_argon: google-antigravity/gemini-4-argon:high
+- m_composer: xai-oauth/grok-composer-2.5-fast
+- m_fast: opencode-go/deepseek-v4.1-flash:max
+- m_fast_high: opencode-go/deepseek-v4.1-flash:high
+- m_flash: charm-hyper/deepseek-v4.1-flash:max
+- m_glm53: zai/glm-5.3:max
+- m_grok: cursor/grok-4.7-fast:xhigh
+- m_grok45: xai-oauth/grok-4.5:high
+- m_haiku: anthropic/claude-haiku-5-5:high
+- m_k3: kimi-code/k3:max
+- m_kfc: kimi-code/kimi-for-coding:high
+- m_luna: openai-codex/gpt-6-luna:max
+- m_mid: anthropic/claude-sonnet-5-5:high
+- m_opus: anthropic/claude-opus-5-5:high
+- m_sol: openai-codex/gpt-6.1-sol:max
+- m_strong: openai-codex/gpt-6.1-sol:high
+- m_swe: devin/swe-2
+- m_zfl: zai/glm-5.3-flash:max
+- plan: opencode-go/deepseek-v4.1-flash:max
+- smol: charm-hyper/qwen3.8-flash:high
+- web: web/perplexity
+
+Agent skill symlinks:
+- omarchy -> /home/user/.local/share/omarchy/default/omarchy-skill
+- shokunin -> /home/user/Projects/ompskills/.omp/skills/shokunin
+- swarm -> /home/user/Projects/ompskills/.omp/skills/tower/swarm
+- tower -> /home/user/Projects/ompskills/.omp/skills/tower
+- ufo -> /home/user/Projects/ompskills/.omp/skills/ufo

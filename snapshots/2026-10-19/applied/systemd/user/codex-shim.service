@@ -1,0 +1,19 @@
+[Unit]
+Description=OAuth token-injecting proxy for OpenAI Codex backend
+After=network-online.target
+
+[Service]
+Type=simple
+Environment=SHIM_PORT=8789
+Environment=SHIM_UPSTREAM=chatgpt.com
+Environment=SHIM_TOKEN_CMD=/home/user/.local/bin/openai-codex-token
+Environment=SHIM_MODELS=gpt-6.1-sol,gpt-6-luna
+Environment=SHIM_SERVICE_TIER=priority
+Environment=SHIM_SERVICE_TIER_MODELS=gpt-6-luna,gpt-6.1-sol
+Environment=SHIM_MAX_CONCURRENT=128
+ExecStart=/usr/bin/python3 /home/user/.local/share/oauth-shim/shim.py
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

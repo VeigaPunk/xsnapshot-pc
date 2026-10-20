@@ -1,0 +1,9 @@
+[extend]
+useDefault = true
+
+[[rules]]
+id = "generic-api-key"
+[rules.allowlist]
+description = "Hyprland XF86 keysym names are not credentials"
+regexTarget = "match"
+regexes = ['''(?i)key:\s+XF86[0-9A-Za-z_]+''']

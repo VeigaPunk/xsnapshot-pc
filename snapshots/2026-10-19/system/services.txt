@@ -1,0 +1,131 @@
+## Enabled system units
+
+cups.path                               enabled disabled
+avahi-daemon.service                    enabled disabled
+bluetooth.service                       enabled disabled
+cups-browsed.service                    enabled disabled
+cups.service                            enabled disabled
+getty@.service                          enabled enabled
+iwd.service                             enabled disabled
+limine-snapper-sync.service             enabled disabled
+linux-modules-cleanup.service           enabled disabled
+sddm.service                            enabled disabled
+systemd-network-generator.service       enabled enabled
+systemd-networkd.service                enabled enabled
+systemd-resolved.service                enabled enabled
+systemd-timesyncd.service               enabled enabled
+ufw.service                             enabled disabled
+avahi-daemon.socket                     enabled disabled
+cups.socket                             enabled disabled
+docker.socket                           enabled disabled
+systemd-networkd-resolve-hook.socket    enabled disabled
+systemd-networkd-varlink-metrics.socket enabled disabled
+systemd-networkd-varlink.socket         enabled disabled
+systemd-networkd.socket                 enabled disabled
+systemd-resolved-monitor.socket         enabled disabled
+systemd-resolved-varlink.socket         enabled disabled
+systemd-userdbd.socket                  enabled enabled
+remote-fs.target                        enabled enabled
+
+## Running system services
+
+  avahi-daemon.service          loaded active running Avahi mDNS/DNS-SD Stack
+  bluetooth.service             loaded active running Bluetooth service
+  bolt.service                  loaded active running Thunderbolt system service
+  containerd.service            loaded active running containerd container runtime
+  cups-browsed.service          loaded active running Make remote CUPS printers available locally
+  cups.service                  loaded active running CUPS Scheduler
+  dbus-broker.service           loaded active running D-Bus System Message Bus
+  docker.service                loaded active running Docker Application Container Engine
+  iwd.service                   loaded active running Wireless service
+  polkit.service                loaded active running Authorization Manager
+  power-profiles-daemon.service loaded active running Power Profiles daemon
+  sddm.service                  loaded active running Simple Desktop Display Manager
+  snapperd.service              loaded active running DBus interface for snapper
+  systemd-hostnamed.service     loaded active running Hostname Service
+  systemd-journald.service      loaded active running Journal Service
+  systemd-logind.service        loaded active running User Login Management
+  systemd-networkd.service      loaded active running Network Management
+  systemd-resolved.service      loaded active running Network Name Resolution
+  systemd-timesyncd.service     loaded active running Network Time Synchronization
+  systemd-udevd.service         loaded active running Rule-based Manager for Device Events and Files
+  systemd-userdbd.service       loaded active running User Database Manager
+  udisks2.service               loaded active running Disk Manager
+  upower.service                loaded active running Daemon for power management
+  user@1000.service             loaded active running User Manager for UID 1000
+
+## Timers
+
+Tue 2026-10-20 00:00:00 -03 2h 46min Mon 2026-10-19 00:00:08 -03       - shadow.timer                     shadow.service
+Tue 2026-10-20 00:57:51 -03 3h 44min Mon 2026-10-19 01:18:35 -03       - plocate-updatedb.timer           plocate-updatedb.service
+Tue 2026-10-20 05:26:41 -03       8h Mon 2026-10-19 06:35:55 -03       - man-db.timer                     man-db.service
+Tue 2026-10-20 08:26:39 -03      11h Mon 2026-10-19 08:26:39 -03 12h ago systemd-tmpfiles-clean.timer     systemd-tmpfiles-clean.service
+Fri 2026-10-23 03:19:18 -03   3 days Sun 2026-10-18 07:53:24 -03       - archlinux-keyring-wkd-sync.timer archlinux-keyring-wkd-sync.service
+
+## Enabled user units
+
+antigravity-shim.service                 enabled enabled
+claude-shim.service                      enabled enabled
+codex-shim.service                       enabled enabled
+cursor-shim.service                      enabled enabled
+devin-shim.service                       enabled enabled
+ds-flash-shim.service                    enabled enabled
+elephant.service                         enabled enabled
+glm-flash-shim.service                   enabled enabled
+omarchy-recover-internal-monitor.service enabled enabled
+swayosd-server.service                   enabled enabled
+wireplumber.service                      enabled enabled
+xai-shim.service                         enabled enabled
+xdg-user-dirs.service                    enabled enabled
+gnome-keyring-daemon.socket              enabled enabled
+p11-kit-server.socket                    enabled enabled
+pipewire-pulse.socket                    enabled enabled
+pipewire.socket                          enabled enabled
+ssh-agent.socket                         enabled enabled
+ai-usage.timer                           enabled enabled
+cursor-shim-healthcheck.timer            enabled enabled
+
+## Running user services
+
+  antigravity-shim.service                          loaded active running OpenAI->Antigravity translation shim for kimi-code
+  app-com.onepassword.OnePassword@autostart.service loaded active running 1Password
+  app-limine\x2dsnapper\x2dnotify@autostart.service loaded active running Limine-snapper-notify
+  app-print\x2dapplet@autostart.service             loaded active running Print Queue Applet
+  app-walker@autostart.service                      loaded active running Walker
+  at-spi-dbus-bus.service                           loaded active running Accessibility services bus
+  claude-shim.service                               loaded active running Claude OAuth shim — OpenAI-compatible API over `claude` CLI stream-json
+  codex-shim.service                                loaded active running OAuth token-injecting proxy for OpenAI Codex backend
+  cursor-shim.service                               loaded active running cursor-shim v2 — OpenAI-compatible API over Cursor's native agent backend
+  dbus-:1.16-org.a11y.atspi.Registry@0.service      loaded active running dbus-:1.16-org.a11y.atspi.Registry@0.service
+  dbus-broker.service                               loaded active running D-Bus User Message Bus
+  dconf.service                                     loaded active running User preferences database
+  devin-shim.service                                loaded active running Devin OpenAI shim (GetChatMessage Connect-RPC -> OpenAI-compatible localhost endpoint)
+  ds-flash-shim.service                             loaded active running ds-flash-shim - OpenAI-compatible 3-leg cascade shim (alibaba-token-plan -> hyper -> opencode-go)
+  elephant.service                                  loaded active running Elephant
+  glm-flash-shim.service                            loaded active running glm-flash-shim - OpenAI-compatible 3-leg cascade shim (zai -> devin -> hyper)
+  gnome-keyring-daemon.service                      loaded active running GNOME Keyring daemon
+  gvfs-daemon.service                               loaded active running Virtual filesystem service
+  gvfs-metadata.service                             loaded active running Virtual filesystem metadata service
+  gvfs-mtp-volume-monitor.service                   loaded active running Virtual filesystem service - Media Transfer Protocol monitor
+  gvfs-udisks2-volume-monitor.service               loaded active running Virtual filesystem service - disk device monitor
+  pipewire-pulse.service                            loaded active running PipeWire PulseAudio
+  pipewire.service                                  loaded active running PipeWire Multimedia Service
+  swayosd-server.service                            loaded active running SwayOSD server
+  wayland-session-bindpid@1601.service              loaded active running Bind graphical session to PID 1601
+  wayland-wm-app-daemon.service                     loaded active running Fast application argument generator
+  wayland-wm@hyprland.desktop.service               loaded active running Main service for Hyprland, An intelligent dynamic tiling Wayland compositor
+  wireplumber.service                               loaded active running Multimedia Service Session Manager
+  xai-shim.service                                  loaded active running OAuth token-injecting proxy for xAI API
+  xdg-desktop-portal-gtk.service                    loaded active running Portal service (GTK/GNOME implementation)
+  xdg-desktop-portal-hyprland.service               loaded active running Portal service (Hyprland implementation)
+  xdg-desktop-portal.service                        loaded active running Portal service
+  xdg-document-portal.service                       loaded active running flatpak document portal service
+  xdg-permission-store.service                      loaded active running sandboxed app permission store
+
+## Failed system units
+
+none
+
+## Failed user units
+
+none

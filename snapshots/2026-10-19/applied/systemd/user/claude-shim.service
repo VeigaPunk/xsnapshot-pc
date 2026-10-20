@@ -1,0 +1,12 @@
+[Unit]
+Description=Claude OAuth shim — OpenAI-compatible API over `claude` CLI stream-json
+
+[Service]
+ExecStart=/usr/bin/python3 /home/user/.local/share/claude-shim/shim.py
+Restart=on-failure
+RestartSec=2
+Environment=PYTHONUNBUFFERED=1
+Environment=CLAUDE_SHIM_DEBUG=0
+
+[Install]
+WantedBy=default.target

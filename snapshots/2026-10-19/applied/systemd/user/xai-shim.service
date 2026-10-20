@@ -1,0 +1,17 @@
+[Unit]
+Description=OAuth token-injecting proxy for xAI API
+After=network-online.target
+
+[Service]
+Type=simple
+Environment=SHIM_PORT=8790
+Environment=SHIM_UPSTREAM=api.x.ai
+Environment=SHIM_TOKEN_CMD=/home/user/.local/bin/xai-oauth-token
+Environment=SHIM_FIX_EFFORT=1
+Environment=SHIM_MAX_CONCURRENT=128
+ExecStart=/usr/bin/python3 /home/user/.local/share/oauth-shim/shim.py
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

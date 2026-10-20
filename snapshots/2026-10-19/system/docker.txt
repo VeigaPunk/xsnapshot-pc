@@ -1,0 +1,37 @@
+## docker info
+
+{
+  "ServerVersion": "29.7.2",
+  "StorageDriver": null,
+  "CgroupDriver": "systemd",
+  "CgroupVersion": "2",
+  "OperatingSystem": "Arch Linux",
+  "Architecture": "x86_64",
+  "NCPU": 32,
+  "MemTotal": 32483102720,
+  "DockerRootDir": "/var/lib/docker",
+  "LiveRestoreEnabled": false
+}
+
+## Containers
+
+t3 | wukakuki/unreal-engine:dev-slim-5.8.3 | Exited (0) 21 hours ago
+
+## Images
+
+ds4cc-linux-floor:22.04 | 2GB
+rust:1-bookworm | 2.23GB
+node:22-bookworm | 1.64GB
+wukakuki/unreal-engine:dev-slim-5.8.3 | 97.9GB
+ubuntu:24.04 | 117MB
+alpine:latest | 14MB
+
+## Volumes
+
+none
+
+## Networks
+
+bridge | bridge | local
+host | host | local
+none | null | local

@@ -1,0 +1,10 @@
+[Unit]
+Description=Run cursor-shim healthcheck every 60s
+
+[Timer]
+OnUnitActiveSec=60s
+AccuracySec=15s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

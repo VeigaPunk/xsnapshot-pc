@@ -1,0 +1,17 @@
+[Unit]
+Description=ds-flash-shim - OpenAI-compatible 3-leg cascade shim (alibaba-token-plan -> hyper -> opencode-go)
+After=network-online.target devin-shim.service
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 %h/.local/share/ds-flash-shim/shim.py
+Restart=on-failure
+RestartSec=2
+Environment=PYTHONUNBUFFERED=1
+# Leg endpoints/keys are overridable here without editing shim.py, e.g.:
+#Environment=DS_LEG1_KEY=oc_sk_...
+#Environment=DS_LEG2_KEY=<redacted>
+#Environment=DS_SHIM_TIMEOUT=15
+
+[Install]
+WantedBy=default.target

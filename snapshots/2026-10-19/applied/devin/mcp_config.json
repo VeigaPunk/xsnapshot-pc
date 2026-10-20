@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "rea": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "rea-agents@6.5.0",
+        "mcp"
+      ],
+      "env": {
+        "GHIDRA_INSTALL_DIR": "/home/user/.local/opt/ghidra_12.1.4_PUBLIC",
+        "JAVA_HOME": "/usr/lib/jvm/java-21-openjdk",
+        "REA_JADX_MCP_JAR": "/home/user/.local/opt/jadx-headless-mcp/jadx-headless-mcp-0.7.1-all.jar"
+      }
+    }
+  }
+}

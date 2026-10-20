@@ -1,0 +1,13 @@
+[Unit]
+Description=Refresh AI usage cache every 5 minutes
+
+[Timer]
+OnBootSec=30
+OnActiveSec=15
+OnUnitActiveSec=300
+Persistent=true
+AccuracySec=10
+Unit=ai-usage.service
+
+[Install]
+WantedBy=timers.target
