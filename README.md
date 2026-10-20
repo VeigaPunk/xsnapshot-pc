@@ -27,6 +27,7 @@ the host.
 | `lib/xsnapshot.py` | The collector: allow-listed file copy, redaction, command inventory, report/JSON writers. |
 | `snapshots/<YYYY-MM-DD>/` | One directory per capture (`applied/`, `etc/`, `packages/`, `system/`, `data/`, `REPORT.md`). |
 | `docs/` | The privacy policy and design notes: [`PRIVACY.md`](docs/PRIVACY.md) and [`WEBSITE.md`](docs/WEBSITE.md) (a future contract for a viewer website; no site is shipped). |
+| `plans/<YYYY-MM-DD>-<topic>/` | Change plans for the machine, kept with their reviews and checked against a committed snapshot; written by hand, not by the collector. |
 | `templates/`, `tests/` | Future capture templates (currently empty) and the stdlib unittest suite. |
 
 Snapshot output is committed on purpose — `.gitignore` excludes only Python bytecode,
