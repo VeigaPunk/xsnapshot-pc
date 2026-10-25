@@ -6,3 +6,6 @@ __pycache__/
 *.tmp
 /tmp/
 /scratch/
+
+# The xsnap_PC coordination workspace is its own repo (VeigaPunk/xsnap_PC).
+/projectzvade/
