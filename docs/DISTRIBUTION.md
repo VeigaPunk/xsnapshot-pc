@@ -26,6 +26,14 @@ Collection reads allow-listed information and writes local files. It does not up
 
 Keep the complete output folder. It contains snapshot JSON, the report, the artifact seal and supporting local files. Review REPORT.md, the excluded-material list and every retained configuration. Redaction is best-effort, not proof that all secrets or personal details were removed. Configurations, environment values, inventory and command output can reveal sensitive context. If anything should not be included, correct the source capture before sharing. Validation checks structure and integrity; it does not establish privacy or provenance by itself.
 
+## Private local output
+
+New capture directories and artifact subdirectories are created with mode `0700`; new report, JSON, manifest and configuration files use `0600`, subject to a stricter existing umask. A permissive shell umask cannot make new capture contents group- or world-readable. The collector refuses an existing output directory or subdirectory with another owner or group/other access rather than changing its permissions.
+
+Artifact writes create new files exclusively through directory-relative, no-follow handles. Existing files, hard links, symlink destinations and special files are not overwritten. The collector stops if its capture root is replaced during collection. The seal includes only files written by this collector instance; unexpected files are rejected rather than silently bundled into the capture.
+
+These are local filesystem access controls, not encryption. They do not protect against the same account, administrators, malware, filesystem behavior that does not enforce Unix permissions, or sharing/copying the files elsewhere. Redaction and local review remain necessary. Existing captures and their permissions are not changed. A stopped capture can contain private partial files; inspect them and validate a complete capture before sharing. Rerunning does not silently reuse a partial directory.
+
 ## Docker inventory: local transport only
 
 Docker daemon inventory ignores the active context, `DOCKER_HOST`, `DOCKER_CONTEXT`, custom headers, proxies and saved Docker credentials/configuration. It selects the first supported socket: `/run/user/<effective-uid>/docker.sock` (rootless), then `/var/run/docker.sock` (system). The final path must be a socket, not a symlink, directory or regular file. It uses the Docker binary on Python's system default executable path, direct arguments with an explicit Unix host, an empty private temporary configuration directory, and no sudo. Your Docker context and configuration are never changed.
