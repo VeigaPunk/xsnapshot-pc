@@ -85,3 +85,24 @@ verify local validation/report review. Do not publish or push this capture as
 part of the test. Publishing real machine data is a separate explicit action.
 Keep or remove the temporary state yourself after review; these instructions do
 not delete it automatically.
+
+## Deterministic local source candidate
+
+After the owner supplies the license and the candidate commit is reviewed, `tools/package_source.py` can prepare a local code-only candidate. It does not make a release. The license must exist in that exact commit, and its SHA-256 must match the explicitly supplied owner-approved value. The current tree still has no LICENSE, so packaging remains fail-closed; this change does not supply or select a license.
+
+```sh
+python3 tools/package_source.py \\
+  --repo /path/to/reviewed/xsnapshot-pc \\
+  --commit FULL_40_CHARACTER_REVIEWED_COMMIT \\
+  --license-sha256 OWNER_APPROVED_LICENSE_SHA256 \\
+  --output /existing/parent/new-candidate-directory
+```
+
+The output directory must not exist. The script writes a private source archive, a matching JSON manifest and SHA256SUMS. Compare two independent local builds and review the exact archive list before considering publication. Existing directories and symlinks are not overwritten. A failed filesystem write can leave partial output; preserve and inspect it, then choose a new destination rather than automatically deleting or overwriting it.
+
+Only four exact source files are included: bin/xsnapshot, lib/xsnapshot.py, LICENSE, and docs/DISTRIBUTION.md mapped to the package README.md. RELEASE-MANIFEST.json is generated with the source commit, Git blob IDs, byte sizes and SHA-256 values. Root README.md, docs/PRIVACY.md (which contains historical capture findings), snapshots, credentials, tests and Git history are not packaged. Symlinks, submodules, missing/empty/over-limit files and non-UTF-8/binary input fail closed. Files are read from immutable Git objects, never the potentially dirty worktree. Git replacement objects, caller routing overrides and all transport protocols are disabled; no missing object is fetched automatically.
+
+Tar ordering, ownership, permissions and timestamps are normalized; gzip has an empty original filename and zero timestamp. Reproducibility is tested for repeated builds with the same Python/zlib toolchain. Cross-toolchain compression identity still needs verification before claiming a universally reproducible release. The manifest's expected_repository is a declared project location, not proof of origin or a publisher attestation. Review the actual repository provenance separately.
+
+The new packaging tests use tiny synthetic Git repositories with an explicitly fake test license, inert source, and marker files representing data that must be excluded. They never collect a machine, package the existing real capture, contact GitHub, sign, create tags/releases, or upload outputs. The complete existing collector tests and seed validation remain required. This preparation does not satisfy real Linux capture/import, licensing, version/distribution approval, signing or website deployment gates.
+
