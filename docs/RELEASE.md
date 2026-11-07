@@ -57,3 +57,31 @@ They do not inventory the developer or CI machine, and do not upload captures.
 
 CI is read-only to the repository. It creates no tags, releases, credentials,
 packages or remote resources.
+
+## Local verification commands
+
+Use a supported Linux machine with Bash, Git and Python 3.10 or newer.
+Check out the exact reviewed candidate commit from the official repository first;
+do not test an unknown modified checkout. These commands collect locally only.
+Start without sudo, so protected configurations may be omitted and reported.
+
+```sh
+python3 -m unittest discover -s tests -v
+state="$(mktemp -d "${TMPDIR:-/tmp}/xsnapshot-verify.XXXXXX")"
+./bin/xsnapshot --root "$state" collect --snapshot verify --no-sudo
+./bin/xsnapshot --root "$state" validate "$state/snapshots/verify"
+printf 'Review locally: %s/snapshots/verify/REPORT.md\n' "$state"
+git status --short
+```
+
+The source checkout should remain unchanged. A second identical collect command
+must refuse to overwrite the existing capture. After reviewing and preserving
+anything needed, an operator can deliberately add `--force` to recapture only
+that test directory. Review the report, excluded material and every retained
+configuration locally; automatic redaction is not a guarantee.
+
+For the website, start its local Pages runtime, select this complete folder and
+verify local validation/report review. Do not publish or push this capture as
+part of the test. Publishing real machine data is a separate explicit action.
+Keep or remove the temporary state yourself after review; these instructions do
+not delete it automatically.

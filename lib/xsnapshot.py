@@ -1451,6 +1451,10 @@ def _unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return result
 
 
+def _reject_json_constant(value: str) -> None:
+    raise ValueError("non-finite JSON constants are not permitted")
+
+
 def _snapshot_path(value: Any) -> str:
     if not isinstance(value, str) or not value or "\\" in value:
         raise ValueError("invalid snapshot-relative path")
@@ -1483,7 +1487,7 @@ def _validate_snapshot(snap: Path) -> tuple[int, str]:
     data_path, seal_path = snap / "data/snapshot.json", snap / "ARTIFACTS.sha256"
     if data_path.stat().st_size > 8 * 1024 * 1024 or seal_path.stat().st_size > 1024 * 1024:
         raise ValueError("snapshot JSON or seal exceeds its size limit")
-    data = json.loads(data_path.read_text(encoding="utf-8"), object_pairs_hook=_unique_json_object)
+    data = json.loads(data_path.read_text(encoding="utf-8"), object_pairs_hook=_unique_json_object, parse_constant=_reject_json_constant)
     required = ["schema", "snapshot_id", "captured_at", "host", "os", "hardware",
                 "storage", "desktop", "packages", "config_index", "artifacts", "privacy"]
     if not isinstance(data, dict) or any(key not in data for key in required):
@@ -1560,7 +1564,7 @@ def _validate_snapshot(snap: Path) -> tuple[int, str]:
     for name in ("all", "explicit", "foreign"):
         values = data["packages"].get(name)
         count = data["packages"].get(name + "_count")
-        if not isinstance(values, list) or type(count) is not int or count != len(values):
+        if not isinstance(values, list) or any(not isinstance(item, str) for item in values) or type(count) is not int or count != len(values):
             raise ValueError("package inventory count or type mismatch")
     return len(indexed), hashlib.sha256(seal_path.read_bytes()).hexdigest()
 

@@ -86,6 +86,15 @@ class PortableValidationTest(unittest.TestCase):
                 mutation(self.data)
                 self.write()
                 self.assertEqual(self.validate(), 1)
+    def test_nonfinite_json_constants_are_not_valid_json(self):
+        for value in (float("nan"), float("inf"), -float("inf")):
+            self.data["extra"] = value
+            self.write()
+            self.assertEqual(self.validate(), 1)
+    def test_package_values_must_be_text(self):
+        self.data["packages"].update(all=[None], all_count=1)
+        self.write()
+        self.assertEqual(self.validate(), 1)
     def test_duplicate_decoded_json_key_is_rejected(self):
         self.write('{"schema":"xsnapshot/v1","sch\\u0065ma":"xsnapshot/v1"}')
         self.assertEqual(self.validate(), 1)
