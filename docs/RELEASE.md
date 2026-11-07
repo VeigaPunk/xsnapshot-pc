@@ -67,6 +67,7 @@ Start without sudo, so protected configurations may be omitted and reported.
 
 ```sh
 python3 -m unittest discover -s tests -v
+./bin/xsnapshot preflight
 state="$(mktemp -d "${TMPDIR:-/tmp}/xsnapshot-verify.XXXXXX")"
 ./bin/xsnapshot --root "$state" collect --snapshot verify --no-sudo
 ./bin/xsnapshot --root "$state" validate "$state/snapshots/verify"
@@ -121,3 +122,8 @@ For an approved local smoke check, use a verified source candidate and the no-su
 The private-output tests run with a permissive umask and verify `0700` capture directories and `0600` files, including copied configuration bodies and the seal. They exercise symlink/hard-link/FIFO destinations, unsafe paths, duplicate writes, replacement of the capture root, unknown files, interruption, competing directory creation and refusal to silently change existing permissions. A synthetic inventory runs the real CLI orchestration, report generation, index, seal and validation without querying a workstation or invoking inventory commands.
 
 These fixtures do not validate source-file privacy, real-machine command behavior, or distribution approval. Real capture review remains a separate release prerequisite. In particular, output permissions do not turn inherited command settings or allow-listed source content into trusted data.
+
+
+## Startup and preflight verification
+
+The startup fixtures provide synthetic Bash environment hooks, exported functions, inherited shell options, a PATH Python shim, Python startup modules and a shadow standard-library module. The launcher and fixed inventory command shell must ignore these canaries without invoking real inventory commands. Preflight checks are separately tested not to execute programs or read configuration bodies, to return a failing status for unsupported core prerequisites, and never to claim that a real capture was verified. A real preflight on a machine only validates these prerequisites, not collection or output privacy.

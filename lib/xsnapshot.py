@@ -290,14 +290,17 @@ class Collector:
 
     # -- command execution -------------------------------------------------
     def run(self, cmd: str, timeout: int = 30) -> str:
-        env = os.environ.copy()
+        # Inventory programs still use the operator's PATH/configuration, but
+        # the shell parsing these fixed commands must not import startup code.
+        excluded = {"BASH_ENV", "ENV", "SHELLOPTS", "BASHOPTS", "CDPATH", "GLOBIGNORE"}
+        env = {key: value for key, value in os.environ.items()
+               if key not in excluded and not key.startswith("BASH_FUNC_")}
         env.update({"LC_ALL": "C", "LANG": "C", "TERM": "dumb"})
         started = dt.datetime.now().isoformat(timespec="seconds")
         try:
             proc = subprocess.run(
-                cmd,
-                shell=True,
-                executable="/bin/bash",
+                ["/bin/bash", "--noprofile", "--norc", "-c", cmd],
+                shell=False,
                 text=True,
                 capture_output=True,
                 timeout=timeout,
@@ -1568,6 +1571,57 @@ def snapshot_dirs(root: Path) -> list[Path]:
     return sorted([p for p in base.iterdir() if p.is_dir()], reverse=True)
 
 
+def preflight_report() -> dict[str, Any]:
+    """Inspect prerequisites only: no inventory command, config body or socket I/O."""
+    linux = platform.system() == "Linux"
+    check = {
+        "linux": linux,
+        "python_3_10_or_newer": sys.version_info >= (3, 10),
+        "isolated_python_startup": bool(sys.flags.isolated and sys.flags.no_site),
+        "fixed_bash_available": os.path.isfile("/bin/bash") and os.access("/bin/bash", os.X_OK),
+        "private_output_primitives": all(hasattr(os, flag) for flag in ("O_NOFOLLOW", "O_DIRECTORY", "O_CLOEXEC"))
+            and os.open in os.supports_dir_fd and os.mkdir in os.supports_dir_fd,
+    }
+    tools = {name: shutil.which(name, path=os.defpath) is not None for name in (
+        "lscpu", "free", "lspci", "lsusb", "lsblk", "findmnt", "ip", "systemctl",
+        "pacman", "npm", "cargo", "hyprctl", "wpctl", "docker",
+    )}
+    warnings = []
+    if not tools["pacman"]:
+        warnings.append("Pacman is absent from the system search path. Arch package inventory will be incomplete; other package managers are not substituted.")
+    if not all(tools.values()):
+        warnings.append("Some optional inventory tools are absent from the system search path. Missing tool output is not evidence of missing hardware or software.")
+    if hasattr(os, "geteuid") and os.geteuid() == 0:
+        warnings.append("This process is running as root. Start an actual capture as an ordinary user with --no-sudo; this check does not change privileges.")
+    warnings.append("Inventory programs can still load their own configuration or contact configured services. Preflight does not execute or authenticate them.")
+    socket_info = Collector._local_docker_socket() if linux and hasattr(os, "geteuid") else None
+    return {
+        "schema": "xsnapshot/preflight/v1", "core_prerequisites_met": all(check.values()),
+        "checks": check, "system_path_tools": tools,
+        "supported_docker_socket_present": socket_info is not None,
+        "docker_socket_checked_without_connecting": True,
+        "capture_verified": False, "warnings": warnings,
+        "limits": "No workstation inventory, configuration bodies, daemon queries, uploads, installs or permission changes. Presence is not trust, compatibility, privacy or release verification.",
+    }
+
+
+def cmd_preflight(args: argparse.Namespace) -> int:
+    report = preflight_report()
+    if args.json:
+        print(json.dumps(report, indent=2))
+    else:
+        print("xsnapshot preflight: " + ("core prerequisites available" if report["core_prerequisites_met"] else "blocked prerequisites"))
+        for name, passed in report["checks"].items():
+            print(f"  {'ok' if passed else 'missing/unsupported'}: {name}")
+        missing = [name for name, found in report["system_path_tools"].items() if not found]
+        print("  optional tools absent from system path: " + (", ".join(missing) or "none"))
+        print("  supported Docker socket: " + ("present, not queried" if report["supported_docker_socket_present"] else "not found; Docker inventory may be unavailable"))
+        for warning in report["warnings"]:
+            print("  note: " + warning)
+        print(report["limits"])
+    return 0 if report["core_prerequisites_met"] else 2
+
+
 def cmd_collect(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
     snapshot_id = args.snapshot or dt.datetime.now().astimezone().strftime("%Y-%m-%d")
@@ -1774,6 +1828,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="xsnapshot", description=__doc__.splitlines()[0])
     parser.add_argument("--root", default=str(REPO_ROOT), help="repository root (default: %(default)s)")
     sub = parser.add_subparsers(dest="command", required=True)
+
+    p_preflight = sub.add_parser("preflight", help="check prerequisites without collecting or querying services")
+    p_preflight.add_argument("--json", action="store_true", help="print a non-capture JSON readiness report")
+    p_preflight.set_defaults(func=cmd_preflight)
 
     p_collect = sub.add_parser("collect", help="capture a new snapshot")
     p_collect.add_argument("--snapshot", help="snapshot id (default: local date)")
