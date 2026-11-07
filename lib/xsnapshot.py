@@ -27,8 +27,10 @@ import platform
 import re
 import shutil
 import socket
+import stat
 import subprocess
 import sys
+import tempfile
 import textwrap
 from pathlib import Path
 from typing import Any, Iterable
@@ -898,33 +900,124 @@ class Collector:
             ("Project manifests", manifests),
         ], protect_versions=True)
 
-    def collect_docker(self) -> None:
-        info = self.run("docker info --format '{{json .}}' 2>/dev/null || true")
-        info_json = self._safe_json(info)
-        keep = {}
-        if isinstance(info_json, dict):
-            keep = {k: info_json.get(k) for k in (
-                "ServerVersion", "StorageDriver", "CgroupDriver", "CgroupVersion",
-                "OperatingSystem", "Architecture", "NCPU", "MemTotal",
-                "DockerRootDir", "LiveRestoreEnabled",
-            )}
-        containers = self.run("docker ps -a --format '{{.Names}} | {{.Image}} | {{.Status}}' 2>/dev/null || true")
-        images = self.run("docker images --format '{{.Repository}}:{{.Tag}} | {{.Size}}' 2>/dev/null || true")
-        volumes = self.run("docker volume ls --format '{{.Name}} | {{.Driver}}' 2>/dev/null || true")
-        networks = self.run("docker network ls --format '{{.Name}} | {{.Driver}} | {{.Scope}}' 2>/dev/null || true")
-        self.data["docker"] = {
-            "info": keep,
-            "containers": containers.splitlines(),
-            "images": images.splitlines(),
-            "volumes": volumes.splitlines(),
-            "networks": networks.splitlines(),
+    @staticmethod
+    def _local_docker_socket() -> tuple[Path, str] | None:
+        # Never resolve the active context, DOCKER_HOST or XDG_RUNTIME_DIR.
+        # Only known Linux Unix transports are eligible. The final path must
+        # itself be a socket, not a symlink or an ordinary file.
+        candidates = (
+            (Path(f"/run/user/{os.geteuid()}/docker.sock"), "rootless"),
+            (Path("/var/run/docker.sock"), "system"),
+        )
+        for path, source in candidates:
+            try:
+                if stat.S_ISSOCK(path.lstat().st_mode):
+                    return path, source
+            except OSError:
+                continue
+        return None
+
+    def _run_local_docker(self, executable: str, endpoint: Path, config: str,
+                          arguments: list[str], source: str) -> tuple[str | None, str]:
+        # No shell, saved Docker configuration, inherited Docker/proxy settings,
+        # custom HTTP headers or user PATH wrappers. Do not elevate privileges.
+        argv = [executable, "--config", config, "--host", f"unix://{endpoint}", *arguments]
+        record: dict[str, Any] = {
+            "command": "docker --config <empty-private-directory> --host "
+                       f"<local-{source}-unix-socket> " + " ".join(arguments),
+            "started_at": dt.datetime.now().isoformat(timespec="seconds"),
         }
+        try:
+            proc = subprocess.run(
+                argv, shell=False, text=True, capture_output=True, timeout=30,
+                env={"PATH": os.defpath, "HOME": config, "DOCKER_CONFIG": config,
+                     "LC_ALL": "C", "LANG": "C", "TERM": "dumb"},
+            )
+            record.update(returncode=proc.returncode,
+                          stdout_bytes=len(proc.stdout.encode()),
+                          stderr_bytes=len(proc.stderr.encode()))
+            if proc.returncode != 0:
+                # Diagnostics may contain endpoint or authentication information.
+                # Record only the exit status; never present a failure as empty.
+                return None, "command_failed"
+            return proc.stdout.rstrip(), "captured"
+        except subprocess.TimeoutExpired:
+            record["returncode"] = "timeout"
+            return None, "timeout"
+        except (OSError, UnicodeError):
+            record["returncode"] = "error"
+            return None, "command_unavailable"
+        finally:
+            self.commands.append(record)
+
+    def collect_docker(self) -> None:
+        fields = {
+            "info": ["info", "--format", "{{json .}}"],
+            "containers": ["ps", "-a", "--format", "{{.Names}} | {{.Image}} | {{.Status}}"],
+            "images": ["images", "--format", "{{.Repository}}:{{.Tag}} | {{.Size}}"],
+            "volumes": ["volume", "ls", "--format", "{{.Name}} | {{.Driver}}"],
+            "networks": ["network", "ls", "--format", "{{.Name}} | {{.Driver}} | {{.Scope}}"],
+        }
+        data: dict[str, Any] = {
+            "capture_status": "unavailable", "transport": "local-unix-socket-only",
+            "daemon_identity_verified": False, "info": {},
+            "containers": [], "images": [], "volumes": [], "networks": [],
+        }
+        status = {key: "not_attempted" for key in fields}
+        socket_info = self._local_docker_socket()
+        executable = shutil.which("docker", path=os.defpath)
+        if socket_info is None:
+            data["reason"] = "no_supported_local_socket"
+        elif executable is None:
+            data["reason"] = "system_docker_cli_unavailable"
+        else:
+            endpoint, source = socket_info
+            data["socket_kind"] = source
+            try:
+                # Contexts, credentials, headers and plugins in the user's Docker
+                # config are not consulted or copied. This directory is removed
+                # after all five read-only commands, including on failure.
+                with tempfile.TemporaryDirectory(prefix="xsnapshot-docker-") as config:
+                    for key, arguments in fields.items():
+                        output, status[key] = self._run_local_docker(
+                            executable, endpoint, config, arguments, source)
+                        if output is None:
+                            continue
+                        if key == "info":
+                            info = self._safe_json(output)
+                            if not isinstance(info, dict):
+                                status[key] = "invalid_response"
+                                continue
+                            data["info"] = {k: info.get(k) for k in (
+                                "ServerVersion", "StorageDriver", "CgroupDriver", "CgroupVersion",
+                                "OperatingSystem", "Architecture", "NCPU", "MemTotal",
+                                "DockerRootDir", "LiveRestoreEnabled",
+                            )}
+                        else:
+                            data[key] = output.splitlines()
+            except OSError:
+                data["reason"] = "private_config_unavailable"
+            captured = sum(value == "captured" for value in status.values())
+            data["capture_status"] = "captured" if captured == len(fields) else (
+                "partial" if captured else "unavailable")
+            if data["capture_status"] != "captured" and "reason" not in data:
+                data["reason"] = "inventory_incomplete"
+        data["section_status"] = status
+        self.data["docker"] = data
+        explanation = (
+            "Only a known local Unix socket is queried, without saved Docker settings or sudo. "
+            "Rootless is preferred when present; failed queries never fall back to another daemon. "
+            "Remote, custom and Docker Desktop contexts are omitted. A local socket is a transport, "
+            "not proof the daemon runs on this PC. Unavailable sections do not mean empty inventory."
+        )
+        self.notes.append(f"Docker inventory: {data['capture_status']}. {explanation}")
         self.write_section("system/docker.txt", [
-            ("docker info", json.dumps(keep, indent=2)),
-            ("Containers", containers or "none"),
-            ("Images", images or "none"),
-            ("Volumes", volumes or "none"),
-            ("Networks", networks or "none"),
+            ("Capture boundary", explanation),
+            ("Capture status", json.dumps({key: data[key] for key in (
+                "capture_status", "transport", "daemon_identity_verified", "section_status")}, indent=2)),
+            ("docker info", json.dumps(data["info"], indent=2) if status["info"] == "captured" else "unavailable"),
+            *[(key.title(), ("\n".join(data[key]) or "none") if status[key] == "captured"
+               else "unavailable") for key in ("containers", "images", "volumes", "networks")],
         ])
 
     def collect_agents(self) -> None:
@@ -1327,6 +1420,9 @@ The snapshot was produced by `xsnapshot collect`. The collector:
   histories; machine/boot IDs; partition UUIDs; MAC/IP addresses; hardware
   serial numbers; raw kernel keyrings; and any file that failed the text/binary
   guard.
+- **Docker:** inventory uses only a known local Unix socket, without saved Docker
+  configuration or sudo. Remote/custom contexts are omitted. See the Docker
+  notes and per-section status; unavailable never means no containers.
 - **Not a backup:** this is a descriptive inventory. It cannot restore
   credentials, encrypted volumes, browser sessions, or application state.
 - **Privilege:** root-owned files are read through `sudo -n` when available.
@@ -1628,3 +1724,4 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

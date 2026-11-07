@@ -106,3 +106,11 @@ Tar ordering, ownership, permissions and timestamps are normalized; gzip has an 
 
 The new packaging tests use tiny synthetic Git repositories with an explicitly fake test license, inert source, and marker files representing data that must be excluded. They never collect a machine, package the existing real capture, contact GitHub, sign, create tags/releases, or upload outputs. The complete existing collector tests and seed validation remain required. This preparation does not satisfy real Linux capture/import, licensing, version/distribution approval, signing or website deployment gates.
 
+
+
+
+## Local Docker inventory verification
+
+Before release, run `python3 -m unittest discover -s tests -v`. The Docker locality fixtures use synthetic socket metadata and an inert local executable, never Docker or a real daemon. They verify fixed socket selection, refusal of unsupported file types, no remote context fallback, direct arguments, a private empty configuration, an environment without saved endpoints/credentials/headers/proxies, cleanup, and truthful partial/unavailable status. They do not establish real daemon compatibility or a real workstation capture.
+
+For an approved local smoke check, use a verified source candidate and the no-sudo procedure in DISTRIBUTION.md. Check `data/snapshot.json` under `docker` and `system/docker.txt`. A missing or inaccessible supported socket is an expected unavailable result; do not change Docker permissions, add groups, enable a daemon, grant sudo or switch contexts just to get a green result. Real rootless/system Docker success still needs a separately reviewed local check. Keep the full capture private and do not commit it.
