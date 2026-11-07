@@ -1455,7 +1455,7 @@ def _snapshot_path(value: Any) -> str:
     if not isinstance(value, str) or not value or "\\" in value:
         raise ValueError("invalid snapshot-relative path")
     path = Path(value)
-    if path.is_absolute() or ".." in path.parts or path.as_posix() != value:
+    if not path.parts or path.is_absolute() or ".." in path.parts or path.as_posix() != value:
         raise ValueError("unsafe snapshot-relative path")
     if any(ord(char) < 32 for char in value):
         raise ValueError("control character in snapshot path")
@@ -1545,7 +1545,7 @@ def _validate_snapshot(snap: Path) -> tuple[int, str]:
         if rel in seen or rel not in indexed:
             raise ValueError("duplicate or unindexed config entry")
         seen.add(rel)
-        if entry.get("snapshot_sha256") != seal[rel] or entry.get("bytes") != indexed[rel]["bytes"]:
+        if type(entry.get("bytes")) is not int or entry.get("snapshot_sha256") != seal[rel] or entry["bytes"] != indexed[rel]["bytes"]:
             raise ValueError("config hash or byte size mismatch")
         if type(entry.get("redactions")) is not int or entry["redactions"] < 0:
             raise ValueError("invalid config redaction count")

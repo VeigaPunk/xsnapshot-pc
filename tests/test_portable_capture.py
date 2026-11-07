@@ -108,7 +108,7 @@ class PortableValidationTest(unittest.TestCase):
         self.assertEqual(self.validate(), 1)
     def test_generated_locale_is_sealed_but_not_copied_config(self):
         self.bodies["etc/locale.gen.active"] = b"en_US.UTF-8 UTF-8\n"
-        self.data["artifacts"].append({"path":"etc/locale.gen.active","bytes":17,
+        self.data["artifacts"].append({"path":"etc/locale.gen.active","bytes":len(self.bodies["etc/locale.gen.active"]),
                                       "sha256":digest(self.bodies["etc/locale.gen.active"])})
         self.write()
         self.assertEqual(self.validate(), 0)
