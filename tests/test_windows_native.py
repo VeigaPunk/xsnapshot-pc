@@ -26,6 +26,7 @@ class WindowsNativeTest(unittest.TestCase):
             # Verify actual Windows ACLs, not Unix chmod mode bits.
             quoted=str(root).replace("'","''")
             script=r'''
+try {
 $ErrorActionPreference='Stop'
 [Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false)
 $root='ROOT_PATH'
@@ -46,10 +47,14 @@ foreach($path in $paths) {
   }
 }
 @{private=$valid; count=$paths.Count} | ConvertTo-Json -Compress
+} catch {
+  @{error_type=$_.Exception.GetType().FullName; category=$_.CategoryInfo.Category.ToString(); line=$_.InvocationInfo.ScriptLineNumber} | ConvertTo-Json -Compress
+  exit 1
+}
 '''.replace('ROOT_PATH',quoted)
             result=subprocess.run([str(w.powershell_path()),'-NoLogo','-NoProfile','-NonInteractive','-Command',script],capture_output=True,timeout=30)
-            self.assertEqual(result.returncode,0,'Native ACL check failed')
-            report=json.loads(result.stdout.decode('utf-8-sig'))
+            report=json.loads(result.stdout.decode('utf-8-sig') or '{}')
+            self.assertEqual(result.returncode,0,'Native ACL check failed: '+json.dumps(report))
             self.assertTrue(report['private'],'Capture ACL grants access beyond current user/system/administrators')
             self.assertEqual(report['count'],5)
             snapshot=json.loads((root/'data/snapshot.json').read_text(encoding='utf-8'))
