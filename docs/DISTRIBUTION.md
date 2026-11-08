@@ -6,10 +6,20 @@ This guide is generic. The source candidate contains no workstation capture, rep
 
 ## Requirements and review
 
-- Linux, Bash and Python 3.10 or newer. No third-party Python package is required.
+- Linux, Bash at `/bin/bash` and system Python 3.10 or newer at `/usr/bin/python3`. No third-party Python package is required. The launcher intentionally ignores Python shims on the user PATH.
 - Read the exact packaged `lib/xsnapshot.py`, especially the configuration allow-list, commands and redaction logic, before collection. Do not run a package from an unverified source.
 - Most inventory commands inherit the machine's configuration. Review configured services and command wrappers before execution; do not assume all subprocesses are offline. Docker daemon inventory has the narrower boundary described below.
 - Start without sudo. Protected information can be omitted. Do not grant privileges merely to make a capture look complete.
+
+## Preflight without collection
+
+From verified source, run `./bin/xsnapshot preflight` (or add `--json`). It checks Linux/Python support, startup isolation, the private-output primitives and the presence of selected system-path tools. It only checks whether a supported Docker socket exists; it never connects. It runs no inventory command, reads no configuration bodies and creates no capture. The report contains fixed labels and booleans, not environment values, home paths, hostnames or tokens.
+
+Exit code `0` means the core prerequisites are available, not that capture, privacy or hardware compatibility is verified. Exit code `2` means a core prerequisite is missing or unsupported. Missing optional tools are warnings, not evidence of missing hardware. In particular, package collection is currently Arch/Pacman-specific; preflight does not invent support for another package manager. Do not install, enable services, grant privileges or change permissions merely to make this check green.
+
+The launcher uses Bash startup isolation and Python `-I -S`; inventory command shells suppress startup files, imported functions and inherited shell options. Ordinary inventory programs still use the operator's PATH and their own configuration. This is not an execution sandbox or an offline guarantee. Directly running an unisolated Python script or sourcing the launcher is outside this startup guarantee. Prefer the executable launcher; a deliberate direct invocation must use `/usr/bin/python3 -I -S lib/xsnapshot.py preflight`.
+
+Reference: [Python isolated startup and site suppression](https://docs.python.org/3/using/cmdline.html). The Bash `-p` behavior was also checked against the installed Bash help; it does not grant privileges, and the launcher refuses mismatched real/effective user identities.
 
 ## Capture outside the source directory
 
