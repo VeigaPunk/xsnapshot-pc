@@ -286,6 +286,7 @@ class Collector:
         self.redaction_total = 0
         self.commands: list[dict[str, Any]] = []
         self.packages: dict[str, Any] = {}
+        self._output_identity: tuple[int, int] | None = None
 
     # -- command execution -------------------------------------------------
     def run(self, cmd: str, timeout: int = 30) -> str:
@@ -347,18 +348,67 @@ class Collector:
             raise PermissionError(path)
         return proc.stdout
 
-    # -- writing -----------------------------------------------------------
+    # -- private output ----------------------------------------------------
+    @staticmethod
+    def _check_private_directory(fd: int) -> os.stat_result:
+        info = os.fstat(fd)
+        if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.geteuid() or info.st_mode & 0o077:
+            raise PermissionError("capture directory must be owned by this user with no group/other access")
+        return info
+
+    def _open_private_output(self) -> int:
+        self.out.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            self.out.mkdir(mode=0o700)
+        except FileExistsError:
+            pass
+        fd = os.open(self.out, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)
+        try:
+            info = self._check_private_directory(fd)
+            identity = (info.st_dev, info.st_ino)
+            if self._output_identity is not None and self._output_identity != identity:
+                raise OSError("capture directory changed during collection")
+            self._output_identity = identity
+            return fd
+        except BaseException:
+            os.close(fd)
+            raise
+
+    def _write_private_file(self, rel: str, body: bytes) -> Path:
+        parts = Path(_snapshot_path(rel)).parts
+        fd = self._open_private_output()
+        try:
+            for name in parts[:-1]:
+                try:
+                    os.mkdir(name, mode=0o700, dir_fd=fd)
+                except FileExistsError:
+                    pass
+                child = os.open(name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=fd)
+                try:
+                    self._check_private_directory(child)
+                except BaseException:
+                    os.close(child)
+                    raise
+                os.close(fd)
+                fd = child
+            # Exclusive creation rejects existing regular files, hard links,
+            # symlinks and special files rather than truncating their targets.
+            output = os.open(parts[-1], os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC,
+                             0o600, dir_fd=fd)
+            with os.fdopen(output, "wb") as stream:
+                stream.write(body)
+        finally:
+            os.close(fd)
+        return self.out / rel
+
     def write(self, rel: str, text: str, *, sanitize: bool = False) -> Path:
         if sanitize:
             text, redactions = redact_text(text)
             self.redaction_total += redactions
-        dest = self.out / rel
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_text(text.rstrip() + "\n", encoding="utf-8")
+        body = (text.rstrip() + "\n").encode("utf-8")
+        dest = self._write_private_file(rel, body)
         self.artifacts.append({
-            "path": rel,
-            "bytes": dest.stat().st_size,
-            "sha256": hashlib.sha256(dest.read_bytes()).hexdigest(),
+            "path": rel, "bytes": len(body), "sha256": hashlib.sha256(body).hexdigest(),
         })
         return dest
 
@@ -431,16 +481,15 @@ class Collector:
             return None
         text = raw.decode("utf-8", errors="replace")
         text, redactions = redact_text(text)
-        dest = self.out / rel
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_text(text.rstrip() + "\n", encoding="utf-8")
+        body = (text.rstrip() + "\n").encode("utf-8")
+        dest = self._write_private_file(rel, body)
         source_display = str(srcp).replace(str(HOME), "~", 1)
         source_display, _ = redact_identity(source_display)
         entry = {
             "source": source_display,
             "path": rel,
-            "bytes": dest.stat().st_size,
-            "snapshot_sha256": hashlib.sha256(dest.read_bytes()).hexdigest(),
+            "bytes": len(body),
+            "snapshot_sha256": hashlib.sha256(body).hexdigest(),
             "redactions": redactions,
         }
         self.config_index.append(entry)
@@ -1163,11 +1212,10 @@ class Collector:
         for src, rel in simple:
             self.copy_file(src, rel)
         # Neovim's theme plugin is a symlink into the active Omarchy theme.
-        self.copy_file(
-            HOME / ".config/nvim/lua/plugins/theme.lua",
-            "applied/nvim/lua/plugins/theme.lua",
-            follow_symlinks=True,
-        )
+        theme_plugin = HOME / ".config/nvim/lua/plugins/theme.lua"
+        if theme_plugin.is_symlink():
+            self.copy_file(theme_plugin, "applied/nvim/lua/plugins/theme.lua", follow_symlinks=True)
+        # A regular theme.lua is included once by the Neovim tree below.
 
         # Globs of small text configs.
         for pattern, prefix in [
@@ -1324,14 +1372,24 @@ class Collector:
         self.data["config_index"] = self.config_index
 
     def write_manifest(self) -> None:
-        """Seal every file except the manifest itself with SHA-256."""
-        lines = []
-        for path in sorted(self.out.rglob("*")):
-            if not path.is_file() or path.name == "ARTIFACTS.sha256":
+        """Seal only the collector's own writes; never absorb an unexpected file."""
+        fd = self._open_private_output()
+        os.close(fd)
+        found = set()
+        for path in self.out.rglob("*"):
+            info = path.lstat()
+            if info.st_uid != os.geteuid() or info.st_mode & 0o077:
+                raise PermissionError("capture contains output with non-private ownership or permissions")
+            if stat.S_ISDIR(info.st_mode):
                 continue
-            rel = path.relative_to(self.out).as_posix()
-            lines.append(f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {rel}")
-        (self.out / "ARTIFACTS.sha256").write_text("\n".join(lines) + "\n", encoding="utf-8")
+            if not stat.S_ISREG(info.st_mode):
+                raise ValueError("capture contains a symlink or special file")
+            found.add(_snapshot_path(path.relative_to(self.out).as_posix()))
+        expected = {row["path"] for row in self.artifacts}
+        if len(expected) != len(self.artifacts) or found != expected:
+            raise ValueError("capture contains unexpected or missing files; refusing to seal it")
+        lines = [f"{row['sha256']}  {row['path']}" for row in sorted(self.artifacts, key=lambda row: row["path"])]
+        self._write_private_file("ARTIFACTS.sha256", ("\n".join(lines) + "\n").encode("utf-8"))
 
     # -- report ------------------------------------------------------------
     def write_report(self) -> None:
@@ -1423,6 +1481,9 @@ The snapshot was produced by `xsnapshot collect`. The collector:
 - **Docker:** inventory uses only a known local Unix socket, without saved Docker
   configuration or sudo. Remote/custom contexts are omitted. See the Docker
   notes and per-section status; unavailable never means no containers.
+- **Local output:** new capture directories and files are owner-only. This is
+  not encryption, does not change earlier captures, and does not remove the need
+  to review every retained file before sharing.
 - **Not a backup:** this is a descriptive inventory. It cannot restore
   credentials, encrypted volumes, browser sessions, or application state.
 - **Privilege:** root-owned files are read through `sudo -n` when available.
@@ -1445,7 +1506,8 @@ file in the snapshot except itself.
 
     # -- orchestration -----------------------------------------------------
     def collect(self) -> None:
-        self.out.mkdir(parents=True, exist_ok=True)
+        fd = self._open_private_output()
+        os.close(fd)
         self.collect_identity()
         self.collect_hardware()
         self.collect_storage()
@@ -1474,6 +1536,7 @@ file in the snapshot except itself.
             "redactions_applied": self.redaction_total,
             "config_files_captured": len(self.config_index),
             "artifact_seal": "ARTIFACTS.sha256",
+            "local_output": "owner-only capture directories and files; not encryption or a privacy guarantee",
         }
         self.data["commands"] = self.commands
         self.data["notes"] = self.notes
@@ -1528,10 +1591,21 @@ def cmd_collect(args: argparse.Namespace) -> int:
             print("refusing to replace a directory outside the capture boundary", file=sys.stderr)
             return 2
         shutil.rmtree(out)
-    out.mkdir(parents=True, exist_ok=True)
+    try:
+        # The final directory must be new. A competing creation is not permission
+        # to reuse or change it, even after an approved force removal.
+        out.mkdir(mode=0o700, parents=True, exist_ok=False)
+    except OSError as exc:
+        print(f"cannot create a new private capture directory: {exc}", file=sys.stderr)
+        return 2
     collector = Collector(root=root, out=out, sudo=not args.no_sudo)
     print(f"collecting snapshot {snapshot_id} -> {out}")
-    collector.collect()
+    try:
+        collector.collect()
+    except (OSError, ValueError) as exc:
+        print(f"capture stopped: {exc}", file=sys.stderr)
+        print("Partial output remains local. Inspect it before any deliberate replacement; do not share it.", file=sys.stderr)
+        return 1
     print(f"done: {len(collector.artifacts)} artifacts, {collector.redaction_total} redactions")
     print(f"report: {out / 'REPORT.md'}")
     print(f"json:   {out / 'data/snapshot.json'}")

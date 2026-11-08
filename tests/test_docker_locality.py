@@ -144,8 +144,9 @@ class DockerLocalityTest(unittest.TestCase):
         self.assertNotIn("private path", json.dumps(self.collector.commands))
 
     def test_invalid_info_is_not_reported_as_success(self):
-        for value in ("not JSON", "[]", "null", '"text"'):
+        for index, value in enumerate(("not JSON", "[]", "null", '"text"')):
             with self.subTest(value=value):
+                self.collector = x.Collector(self.root, self.root / f"invalid-{index}", sudo=False)
                 self.collect(subprocess.CompletedProcess([], 0, value, ""))
                 self.assertEqual(self.collector.data["docker"]["section_status"]["info"], "invalid_response")
                 self.assertEqual(self.collector.data["docker"]["capture_status"], "partial")

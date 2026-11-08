@@ -114,3 +114,10 @@ The new packaging tests use tiny synthetic Git repositories with an explicitly f
 Before release, run `python3 -m unittest discover -s tests -v`. The Docker locality fixtures use synthetic socket metadata and an inert local executable, never Docker or a real daemon. They verify fixed socket selection, refusal of unsupported file types, no remote context fallback, direct arguments, a private empty configuration, an environment without saved endpoints/credentials/headers/proxies, cleanup, and truthful partial/unavailable status. They do not establish real daemon compatibility or a real workstation capture.
 
 For an approved local smoke check, use a verified source candidate and the no-sudo procedure in DISTRIBUTION.md. Check `data/snapshot.json` under `docker` and `system/docker.txt`. A missing or inaccessible supported socket is an expected unavailable result; do not change Docker permissions, add groups, enable a daemon, grant sudo or switch contexts just to get a green result. Real rootless/system Docker success still needs a separately reviewed local check. Keep the full capture private and do not commit it.
+
+
+## Private-output verification
+
+The private-output tests run with a permissive umask and verify `0700` capture directories and `0600` files, including copied configuration bodies and the seal. They exercise symlink/hard-link/FIFO destinations, unsafe paths, duplicate writes, replacement of the capture root, unknown files, interruption, competing directory creation and refusal to silently change existing permissions. A synthetic inventory runs the real CLI orchestration, report generation, index, seal and validation without querying a workstation or invoking inventory commands.
+
+These fixtures do not validate source-file privacy, real-machine command behavior, or distribution approval. Real capture review remains a separate release prerequisite. In particular, output permissions do not turn inherited command settings or allow-listed source content into trusted data.
