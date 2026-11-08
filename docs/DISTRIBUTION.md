@@ -8,7 +8,7 @@ This guide is generic. The source candidate contains no workstation capture, rep
 
 - Linux, Bash and Python 3.10 or newer. No third-party Python package is required.
 - Read the exact packaged `lib/xsnapshot.py`, especially the configuration allow-list, commands and redaction logic, before collection. Do not run a package from an unverified source.
-- Inventory commands inherit the machine's configuration. Review configured services, command wrappers and contexts before execution; do not assume subprocesses cannot contact a configured remote service.
+- Most inventory commands inherit the machine's configuration. Review configured services and command wrappers before execution; do not assume all subprocesses are offline. Docker daemon inventory has the narrower boundary described below.
 - Start without sudo. Protected information can be omitted. Do not grant privileges merely to make a capture look complete.
 
 ## Capture outside the source directory
@@ -26,6 +26,18 @@ Collection reads allow-listed information and writes local files. It does not up
 
 Keep the complete output folder. It contains snapshot JSON, the report, the artifact seal and supporting local files. Review REPORT.md, the excluded-material list and every retained configuration. Redaction is best-effort, not proof that all secrets or personal details were removed. Configurations, environment values, inventory and command output can reveal sensitive context. If anything should not be included, correct the source capture before sharing. Validation checks structure and integrity; it does not establish privacy or provenance by itself.
 
+## Docker inventory: local transport only
+
+Docker daemon inventory ignores the active context, `DOCKER_HOST`, `DOCKER_CONTEXT`, custom headers, proxies and saved Docker credentials/configuration. It selects the first supported socket: `/run/user/<effective-uid>/docker.sock` (rootless), then `/var/run/docker.sock` (system). The final path must be a socket, not a symlink, directory or regular file. It uses the Docker binary on Python's system default executable path, direct arguments with an explicit Unix host, an empty private temporary configuration directory, and no sudo. Your Docker context and configuration are never changed.
+
+Only `info`, container listing, image listing, volume listing and network listing are requested. The temporary configuration is removed when the commands finish. Rootless takes priority when both sockets exist. Once selected, a failed query does not switch to another daemon. Remote contexts, custom socket paths and Docker Desktop contexts are omitted, even if they are your normal default. A system installation without the supported socket or Docker binary is reported as unavailable, not as a machine with no containers.
+
+The JSON contains `docker.capture_status` (`captured`, `partial` or `unavailable`) and a status for each section. An empty list is meaningful only when that section says `captured`. Unavailable sections and omitted contexts must not be used to infer that Docker resources do not exist. Read `system/docker.txt` and the report notes before sharing.
+
+A local Unix socket establishes transport, not the daemon's physical location or trustworthiness: a local service can proxy elsewhere. `daemon_identity_verified` is therefore always false. This change does not sandbox other collector commands, validate every local executable, or make redaction a privacy guarantee. Docker names, image references and other successful inventory output still require local review.
+
+Sources: [Docker contexts](https://docs.docker.com/engine/manage-resources/contexts/), [Docker CLI configuration and environment](https://docs.docker.com/reference/cli/docker/), and [rootless socket locations](https://docs.docker.com/engine/security/rootless/tips/).
+
 ## Optional website use
 
 The website is a separate project. Opening the complete capture folder is a local review step. Only an explicit, separately reviewed publication should send its snapshot JSON. Report and configuration bodies should stay local. A single JSON file is preview-only because it cannot prove the complete folder's integrity.
@@ -35,3 +47,4 @@ An unlisted link is readable by anyone who has it. Keep the private delete/recov
 ## License
 
 The package must include the owner's approved LICENSE, with its exact SHA-256 in the release manifest. The packaging tool refuses a missing or mismatched license. A matching hash does not itself grant permission to distribute; release approval and any signing/provenance requirements remain separate.
+
