@@ -28,6 +28,7 @@ class WindowsNativeTest(unittest.TestCase):
             script=r'''
 try {
 $ErrorActionPreference='Stop'
+Import-Module (Join-Path $PSHOME 'Modules\Microsoft.PowerShell.Security\Microsoft.PowerShell.Security.psd1') -ErrorAction Stop
 [Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false)
 $root='ROOT_PATH'
 $me=[System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
