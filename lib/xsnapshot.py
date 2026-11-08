@@ -1412,25 +1412,24 @@ def snapshot_dirs(root: Path) -> list[Path]:
 def cmd_collect(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
     snapshot_id = args.snapshot or dt.datetime.now().astimezone().strftime("%Y-%m-%d")
-    out = Path(args.out).resolve() if args.out else root / "snapshots" / snapshot_id
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", snapshot_id):
+        print("snapshot id must be a single safe filename", file=sys.stderr)
+        return 2
+    requested = Path(args.out).expanduser() if args.out else root / "snapshots" / snapshot_id
+    if requested.is_symlink() or (root / "snapshots").is_symlink():
+        print("refusing a symlink snapshot destination", file=sys.stderr)
+        return 2
+    out = requested.resolve()
     if out.exists() and not args.force:
         print(f"refusing to overwrite existing snapshot: {out}", file=sys.stderr)
-        print("use --force to replace it", file=sys.stderr)
+        print("use --force to replace this capture deliberately", file=sys.stderr)
         return 2
     if out.exists() and args.force:
-        allowed = False
-        try:
-            out.relative_to(root / "snapshots")
-            allowed = True
-        except ValueError:
-            pass
-        try:
-            out.relative_to(Path("/tmp"))
-            allowed = out.name.startswith("xsnapshot")
-        except ValueError:
-            pass
-        if not allowed:
-            print(f"refusing to delete outside snapshots/ or /tmp/xsnapshot*: {out}", file=sys.stderr)
+        base = root / "snapshots"
+        managed_child = out != base and out.is_relative_to(base)
+        temporary_capture = out.parent == Path("/tmp") and out.name.startswith("xsnapshot")
+        if not out.is_dir() or not (managed_child or temporary_capture):
+            print("refusing to replace a directory outside the capture boundary", file=sys.stderr)
             return 2
         shutil.rmtree(out)
     out.mkdir(parents=True, exist_ok=True)
@@ -1443,6 +1442,133 @@ def cmd_collect(args: argparse.Namespace) -> int:
     return 0
 
 
+def _unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate JSON object key")
+        result[key] = value
+    return result
+
+
+def _reject_json_constant(value: str) -> None:
+    raise ValueError("non-finite JSON constants are not permitted")
+
+
+def _snapshot_path(value: Any) -> str:
+    if not isinstance(value, str) or not value or "\\" in value:
+        raise ValueError("invalid snapshot-relative path")
+    path = Path(value)
+    if not path.parts or path.is_absolute() or ".." in path.parts or path.as_posix() != value:
+        raise ValueError("unsafe snapshot-relative path")
+    if any(ord(char) < 32 for char in value):
+        raise ValueError("control character in snapshot path")
+    return value
+
+
+def _validate_snapshot(snap: Path) -> tuple[int, str]:
+    # Inspect the entire supplied tree before reading any artifact. Symlink and
+    # special-file rejection prevents following a sealed path outside the tree.
+    on_disk: set[str] = set()
+    total_bytes = 0
+    for count, path in enumerate(snap.rglob("*"), 1):
+        rel = path.relative_to(snap)
+        if count > 8192 or len(rel.parts) > 32:
+            raise ValueError("snapshot traversal limit exceeded")
+        if path.is_symlink() or (not path.is_dir() and not path.is_file()):
+            raise ValueError("snapshot contains a symlink or special file")
+        if path.is_file():
+            on_disk.add(_snapshot_path(rel.as_posix()))
+            total_bytes += path.stat().st_size
+            if len(on_disk) > 4096 or total_bytes > 64 * 1024 * 1024:
+                raise ValueError("snapshot exceeds 4096 files or 64 MiB")
+    if not {"data/snapshot.json", "REPORT.md", "ARTIFACTS.sha256"} <= on_disk:
+        raise ValueError("snapshot JSON, report and artifact seal are required")
+    data_path, seal_path = snap / "data/snapshot.json", snap / "ARTIFACTS.sha256"
+    if data_path.stat().st_size > 8 * 1024 * 1024 or seal_path.stat().st_size > 1024 * 1024:
+        raise ValueError("snapshot JSON or seal exceeds its size limit")
+    data = json.loads(data_path.read_text(encoding="utf-8"), object_pairs_hook=_unique_json_object, parse_constant=_reject_json_constant)
+    required = ["schema", "snapshot_id", "captured_at", "host", "os", "hardware",
+                "storage", "desktop", "packages", "config_index", "artifacts", "privacy"]
+    if not isinstance(data, dict) or any(key not in data for key in required):
+        raise ValueError("snapshot is not an object with the required sections")
+    if data["schema"] != SCHEMA:
+        raise ValueError("unexpected snapshot schema")
+    if not isinstance(data["snapshot_id"], str) or data["snapshot_id"] != snap.name:
+        raise ValueError("snapshot id does not match the capture directory")
+    if not isinstance(data["captured_at"], str):
+        raise ValueError("capture date must be an ISO timestamp")
+    dt.datetime.fromisoformat(data["captured_at"])
+    for key in ("host", "os", "hardware", "storage", "desktop", "packages", "privacy"):
+        if not isinstance(data[key], dict):
+            raise ValueError("snapshot section has an invalid type")
+
+    seal: dict[str, str] = {}
+    for line in seal_path.read_text(encoding="utf-8").splitlines():
+        match = re.fullmatch(r"([0-9a-f]{64})  (.+)", line)
+        if not match:
+            raise ValueError("malformed artifact seal line")
+        digest, rel = match.groups()
+        rel = _snapshot_path(rel)
+        if rel in seal:
+            raise ValueError("duplicate artifact seal entry")
+        seal[rel] = digest
+    if set(seal) != on_disk - {"ARTIFACTS.sha256"}:
+        raise ValueError("artifact seal does not exactly cover the capture")
+    for rel, expected in seal.items():
+        if hashlib.sha256((snap / rel).read_bytes()).hexdigest() != expected:
+            raise ValueError("artifact seal hash mismatch")
+
+    artifacts = data["artifacts"]
+    if not isinstance(artifacts, list) or not artifacts:
+        raise ValueError("artifact index must be a nonempty list")
+    indexed: dict[str, dict[str, Any]] = {}
+    for item in artifacts:
+        if not isinstance(item, dict):
+            raise ValueError("artifact entry must be an object")
+        rel = _snapshot_path(item.get("path"))
+        if rel in indexed:
+            raise ValueError("duplicate artifact index entry")
+        indexed[rel] = item
+    if set(indexed) != on_disk - {"data/snapshot.json", "ARTIFACTS.sha256"}:
+        raise ValueError("artifact index does not exactly cover the capture")
+    for rel, item in indexed.items():
+        if type(item.get("bytes")) is not int or item["bytes"] != (snap / rel).stat().st_size:
+            raise ValueError("artifact byte size mismatch")
+        if item.get("sha256") != seal[rel]:
+            raise ValueError("artifact hash mismatch")
+
+    configs = data["config_index"]
+    if not isinstance(configs, list):
+        raise ValueError("config index must be a list")
+    seen: set[str] = set()
+    for entry in configs:
+        if not isinstance(entry, dict):
+            raise ValueError("config entry must be an object")
+        rel = _snapshot_path(entry.get("path"))
+        if rel in seen or rel not in indexed:
+            raise ValueError("duplicate or unindexed config entry")
+        seen.add(rel)
+        if type(entry.get("bytes")) is not int or entry.get("snapshot_sha256") != seal[rel] or entry["bytes"] != indexed[rel]["bytes"]:
+            raise ValueError("config hash or byte size mismatch")
+        if type(entry.get("redactions")) is not int or entry["redactions"] < 0:
+            raise ValueError("invalid config redaction count")
+        if not isinstance(entry.get("source"), str):
+            raise ValueError("config source label must be text")
+    copied = {rel for rel in indexed if rel.startswith(("etc/", "applied/"))
+              and rel != "etc/locale.gen.active"}
+    if seen != copied:
+        raise ValueError("config index does not exactly cover copied configs")
+    if type(data["privacy"].get("config_files_captured")) is not int or data["privacy"]["config_files_captured"] != len(configs):
+        raise ValueError("privacy count does not match config index")
+    for name in ("all", "explicit", "foreign"):
+        values = data["packages"].get(name)
+        count = data["packages"].get(name + "_count")
+        if not isinstance(values, list) or any(not isinstance(item, str) for item in values) or type(count) is not int or count != len(values):
+            raise ValueError("package inventory count or type mismatch")
+    return len(indexed), hashlib.sha256(seal_path.read_bytes()).hexdigest()
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
     snap = Path(args.snapshot).resolve() if args.snapshot else (
@@ -1451,133 +1577,12 @@ def cmd_validate(args: argparse.Namespace) -> int:
     if not snap:
         print("no snapshots found", file=sys.stderr)
         return 2
-
-    data_path = snap / "data/snapshot.json"
-    seal_path = snap / "ARTIFACTS.sha256"
-    if not data_path.exists():
-        print(f"missing {data_path}", file=sys.stderr)
-        return 1
-    if not seal_path.exists():
-        print(f"missing {seal_path}", file=sys.stderr)
-        return 1
     try:
-        data = json.loads(data_path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        print(f"invalid JSON: {exc}", file=sys.stderr)
+        count, seal_digest = _validate_snapshot(snap)
+    except (OSError, ValueError, TypeError, RecursionError) as exc:
+        print(f"invalid snapshot: {exc}", file=sys.stderr)
         return 1
-
-    required = ["schema", "snapshot_id", "captured_at", "host", "os", "hardware",
-                "storage", "desktop", "packages", "config_index", "artifacts",
-                "privacy"]
-    missing = [key for key in required if key not in data]
-    if missing:
-        print("missing keys: " + ", ".join(missing), file=sys.stderr)
-        return 1
-    if data["schema"] != SCHEMA:
-        print(f"unexpected schema: {data['schema']}", file=sys.stderr)
-        return 1
-
-    # The external seal covers every file except itself.  This catches both
-    # tampering and unlisted files, including changes to REPORT.md.
-    seal: dict[str, str] = {}
-    for lineno, line in enumerate(seal_path.read_text(encoding="utf-8").splitlines(), 1):
-        if not line.strip():
-            continue
-        m = re.match(r"^([0-9a-f]{64})  (.+)$", line)
-        if not m:
-            print(f"malformed seal line {lineno}: {line!r}", file=sys.stderr)
-            return 1
-        digest, rel = m.groups()
-        if rel in seal:
-            print(f"duplicate seal entry: {rel}", file=sys.stderr)
-            return 1
-        seal[rel] = digest
-    on_disk = {
-        p.relative_to(snap).as_posix()
-        for p in snap.rglob("*")
-        if p.is_file()
-    }
-    expected_seal = on_disk - {"ARTIFACTS.sha256"}
-    if set(seal) != expected_seal:
-        missing = sorted(expected_seal - set(seal))
-        extra = sorted(set(seal) - expected_seal)
-        if missing:
-            print("seal missing files: " + ", ".join(missing[:10]), file=sys.stderr)
-        if extra:
-            print("seal lists missing files: " + ", ".join(extra[:10]), file=sys.stderr)
-        return 1
-    for rel, expected in seal.items():
-        path = snap / rel
-        digest = hashlib.sha256(path.read_bytes()).hexdigest()
-        if digest != expected:
-            print(f"seal hash mismatch: {rel}", file=sys.stderr)
-            return 1
-
-    artifacts = data.get("artifacts", [])
-    if not isinstance(artifacts, list) or len(artifacts) < 100:
-        print("artifact index is empty or implausibly short", file=sys.stderr)
-        return 1
-    indexed: dict[str, dict[str, Any]] = {}
-    for item in artifacts:
-        rel = item.get("path", "")
-        rel_path = Path(rel)
-        if rel_path.is_absolute() or ".." in rel_path.parts:
-            print(f"unsafe artifact path: {rel}", file=sys.stderr)
-            return 1
-        resolved = (snap / rel_path).resolve()
-        if not resolved.is_relative_to(snap):
-            print(f"artifact escapes snapshot: {rel}", file=sys.stderr)
-            return 1
-        indexed[rel] = item
-    expected_indexed = on_disk - {"data/snapshot.json", "ARTIFACTS.sha256"}
-    if set(indexed) != expected_indexed:
-        missing = sorted(expected_indexed - set(indexed))
-        extra = sorted(set(indexed) - expected_indexed)
-        if missing:
-            print("index missing files: " + ", ".join(missing[:10]), file=sys.stderr)
-        if extra:
-            print("index lists missing files: " + ", ".join(extra[:10]), file=sys.stderr)
-        return 1
-    for rel, item in indexed.items():
-        path = snap / rel
-        if item.get("bytes") != path.stat().st_size:
-            print(f"size mismatch: {rel}", file=sys.stderr)
-            return 1
-        digest = hashlib.sha256(path.read_bytes()).hexdigest()
-        if item.get("sha256") != digest:
-            print(f"hash mismatch: {rel}", file=sys.stderr)
-            return 1
-
-    config_index = data.get("config_index", [])
-    if len(config_index) < 100:
-        print("config index is implausibly short", file=sys.stderr)
-        return 1
-    for entry in config_index:
-        rel = entry.get("path", "")
-        if rel not in indexed:
-            print(f"config missing from artifact index: {rel}", file=sys.stderr)
-            return 1
-        path = snap / rel
-        if entry.get("snapshot_sha256") != hashlib.sha256(path.read_bytes()).hexdigest():
-            print(f"config hash mismatch: {rel}", file=sys.stderr)
-            return 1
-        if not isinstance(entry.get("redactions"), int) or entry["redactions"] < 0:
-            print(f"invalid redaction count: {rel}", file=sys.stderr)
-            return 1
-    if data.get("privacy", {}).get("config_files_captured") != len(config_index):
-        print("privacy count does not match config index", file=sys.stderr)
-        return 1
-
-    packages = data.get("packages", {})
-    if packages.get("all_count") != len(packages.get("all", [])):
-        print("package count mismatch", file=sys.stderr)
-        return 1
-    if packages.get("explicit_count") != len(packages.get("explicit", [])):
-        print("explicit package count mismatch", file=sys.stderr)
-        return 1
-
-    seal_digest = hashlib.sha256(seal_path.read_bytes()).hexdigest()
-    print(f"valid: {snap} ({len(indexed)} artifacts, seal {seal_digest[:12]}…)")
+    print(f"valid: {snap} ({count} artifacts, seal {seal_digest[:12]}…)")
     return 0
 
 

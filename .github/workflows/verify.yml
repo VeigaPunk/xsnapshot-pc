@@ -1,0 +1,19 @@
+name: Verify collector
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Test redaction, committed fixture and portable capture boundaries
+        run: python3 -m unittest discover -s tests -v
+      - name: Validate the existing reviewed seed capture
+        run: ./bin/xsnapshot validate snapshots/2026-10-19
