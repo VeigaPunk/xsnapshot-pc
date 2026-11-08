@@ -115,7 +115,7 @@ class PreflightTest(unittest.TestCase):
     def test_missing_optional_tools_are_coverage_warnings_not_hardware_claims(self):
         report = self.report(found=False)
         self.assertTrue(report["core_prerequisites_met"])
-        self.assertIn("Arch package inventory will be incomplete", " ".join(report["warnings"]))
+        self.assertIn("Installed package inventory may be unavailable", " ".join(report["warnings"]))
         self.assertIn("not evidence of missing hardware", " ".join(report["warnings"]))
 
     def test_unsupported_platform_old_python_and_unisolated_startup_block_readiness(self):

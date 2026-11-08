@@ -208,16 +208,79 @@ def shquote(value: str) -> str:
     return "'" + value.replace("'", "'\\''") + "'"
 
 
+MAX_CONFIG_BYTES = 1024 * 1024
+
+
+def _open_config_directory(path: Path) -> int:
+    """Pin a directory without following any component's symlink."""
+    if not path.is_absolute() or ".." in path.parts:
+        raise ValueError("unsupported config path")
+    flags = os.O_PATH | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
+    fd = os.open("/", flags)
+    try:
+        for name in path.parts[1:]:
+            child = os.open(name, flags, dir_fd=fd)
+            os.close(fd)
+            fd = child
+        return fd
+    except BaseException:
+        os.close(fd)
+        raise
+
+
+def read_config_text(path: Path, limit: int = MAX_CONFIG_BYTES) -> str:
+    """Bounded regular UTF-8 text; no symlink traversal or privileged fallback."""
+    if not 0 < limit <= MAX_CONFIG_BYTES:
+        raise ValueError("unsupported config size limit")
+    descriptors = [_open_config_directory(path.parent)]
+    try:
+        pinned = os.open(path.name, os.O_PATH | os.O_NOFOLLOW | os.O_CLOEXEC,
+                         dir_fd=descriptors[0])
+        descriptors.append(pinned)
+        before = os.fstat(pinned)
+        if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1:
+            raise ValueError("config is not a single regular file")
+        if before.st_size > limit:
+            raise ValueError("config exceeds size limit")
+        readable = os.open(f"/proc/self/fd/{pinned}", os.O_RDONLY | os.O_CLOEXEC)
+        descriptors.append(readable)
+        opened = os.fstat(readable)
+        if (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino):
+            raise ValueError("config changed while opening")
+        chunks, length = [], 0
+        while length <= limit:
+            chunk = os.read(readable, min(65536, limit + 1 - length))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            length += len(chunk)
+        after = os.fstat(readable)
+        stamp = lambda info: (info.st_dev, info.st_ino, info.st_size,
+                              info.st_mtime_ns, info.st_ctime_ns)
+        if length > limit:
+            raise ValueError("config exceeds size limit")
+        if stamp(before) != stamp(after) or length != after.st_size:
+            raise ValueError("config changed while reading")
+        raw = b"".join(chunks)
+        if b"\x00" in raw:
+            raise ValueError("config contains binary data")
+        return raw.decode("utf-8", errors="strict")
+    finally:
+        for fd in reversed(descriptors):
+            os.close(fd)
+
+
 def parse_os_release(path: Path = Path("/etc/os-release")) -> dict[str, str]:
     data: dict[str, str] = {}
     try:
-        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        for line in read_config_text(path).splitlines():
             if "=" not in line or line.lstrip().startswith("#"):
                 continue
             key, _, value = line.partition("=")
             data[key] = value.strip().strip('"').strip("'")
-    except OSError:
-        pass
+    except (OSError, ValueError):
+        if path == Path("/etc/os-release"):
+            return parse_os_release(Path("/usr/lib/os-release"))
     return data
 
 
@@ -337,20 +400,6 @@ class Collector:
             return "[unavailable: root required]"
         return self.run("sudo -n " + cmd, timeout=timeout)
 
-    def sudo_read_bytes(self, path: Path) -> bytes:
-        if os.geteuid() == 0:
-            return path.read_bytes()
-        if not self.use_sudo:
-            raise PermissionError(path)
-        proc = subprocess.run(
-            ["sudo", "-n", "cat", str(path)],
-            capture_output=True,
-            timeout=30,
-        )
-        if proc.returncode != 0:
-            raise PermissionError(path)
-        return proc.stdout
-
     # -- private output ----------------------------------------------------
     @staticmethod
     def _check_private_directory(fd: int) -> os.stat_result:
@@ -443,46 +492,24 @@ class Collector:
         follow_symlinks: bool = False,
     ) -> Path | None:
         srcp = Path(os.path.expanduser(str(src)))
-        try:
-            is_link = srcp.is_symlink()
-        except OSError:
-            is_link = False
-        if is_link and not follow_symlinks:
-            self.notes.append(f"skipped symlink: {srcp} -> {os.readlink(srcp)}")
-            return None
-        if is_link and follow_symlinks:
+        # Only the standard vendor os-release alias has a fixed safe destination.
+        source = srcp
+        if follow_symlinks and srcp == Path("/etc/os-release"):
             try:
-                target = srcp.resolve(strict=True)
-            except OSError as exc:
-                self.notes.append(f"unresolvable symlink: {srcp}: {exc}")
-                return None
-            allowed_roots = (Path("/etc"), Path("/usr"), Path("/boot"),
-                             Path("/run"), HOME)
-            if not any(target == root or root in target.parents for root in allowed_roots):
-                self.notes.append(f"refused symlink outside allowed roots: {srcp} -> {target}")
-                return None
-        raw: bytes | None = None
+                if os.readlink(srcp) in ("../usr/lib/os-release", "/usr/lib/os-release"):
+                    source = Path("/usr/lib/os-release")
+            except OSError:
+                pass
         try:
-            raw = srcp.read_bytes()
-        except (FileNotFoundError, IsADirectoryError):
+            text = read_config_text(source)
+        except FileNotFoundError:
             if not missing_ok:
-                self.notes.append(f"missing required config: {srcp}")
+                self.notes.append(f"missing required config: {rel}")
             return None
-        except PermissionError:
-            try:
-                raw = self.sudo_read_bytes(srcp)
-            except Exception as exc:  # noqa: BLE001
-                self.notes.append(f"unreadable config: {srcp}: {exc}")
-                return None
-        except OSError as exc:
-            self.notes.append(f"unreadable config: {srcp}: {exc}")
+        except (OSError, ValueError):
+            # No target paths, raw OS diagnostics or privileged retry.
+            self.notes.append(f"config omitted (unreadable, linked, oversized or non-text): {rel}")
             return None
-        if raw is None:
-            return None
-        if b"\x00" in raw[:8192]:
-            self.notes.append(f"skipped binary config: {srcp}")
-            return None
-        text = raw.decode("utf-8", errors="replace")
         text, redactions = redact_text(text)
         body = (text.rstrip() + "\n").encode("utf-8")
         dest = self._write_private_file(rel, body)
@@ -514,9 +541,20 @@ class Collector:
         exclude_dirs: tuple[str, ...] = (".git", "node_modules", "__pycache__", ".cache"),
     ) -> int:
         count = 0
-        if not src.exists():
+        try:
+            directory = _open_config_directory(src)
+            os.close(directory)
+        except FileNotFoundError:
             return 0
-        for item in sorted(src.rglob("*")):
+        except (OSError, ValueError):
+            self.notes.append(f"config tree omitted (unreadable or linked): {dest_prefix}")
+            return 0
+        for visited, item in enumerate(src.rglob("*"), 1):
+            if visited > 8192:
+                self.notes.append(f"config tree entry limit reached: {dest_prefix}")
+                break
+            if len(item.relative_to(src).parts) > 32:
+                continue
             if item.is_symlink() or not item.is_file():
                 continue
             if any(part in exclude_dirs for part in item.parts):
@@ -572,13 +610,13 @@ class Collector:
                 break
         cpu = {
             "model": cpu_model,
-            "sockets": "1",
-            "cores": "16",
-            "threads": "32",
-            "max_mhz": "5756",
-            "min_mhz": "624",
+            "sockets": "unknown",
+            "cores": "unknown",
+            "threads": "unknown",
+            "max_mhz": "unknown",
+            "min_mhz": "unknown",
             "microcode": "unknown",
-            "virtualization": "AMD-V",
+            "virtualization": "unknown",
         }
         for line in lscpu.splitlines():
             if ":" not in line:
@@ -586,27 +624,37 @@ class Collector:
             key, _, val = line.partition(":")
             key = key.strip()
             val = val.strip()
+            if not val:
+                continue
             if key == "CPU(s)":
-                cpu["threads"] = val
+                if re.fullmatch(r"[1-9][0-9]{0,7}", val):
+                    cpu["threads"] = val
             elif key == "Core(s) per socket":
-                cpu["cores"] = f"{val} per socket"
+                if re.fullmatch(r"[1-9][0-9]{0,7}", val):
+                    cpu["cores"] = f"{val} per socket"
             elif key == "Socket(s)":
-                cpu["sockets"] = val
-            elif key == "CPU max MHz":
-                cpu["max_mhz"] = f"{float(val):.3f}" if val else val
-            elif key == "CPU min MHz":
-                cpu["min_mhz"] = f"{float(val):.3f}" if val else val
+                if re.fullmatch(r"[1-9][0-9]{0,7}", val):
+                    cpu["sockets"] = val
+            elif key in ("CPU max MHz", "CPU min MHz"):
+                if re.fullmatch(r"[0-9]{1,9}(?:\.[0-9]{1,9})?", val) and float(val) > 0:
+                    cpu["max_mhz" if key == "CPU max MHz" else "min_mhz"] = f"{float(val):.3f}"
             elif key == "Microcode version":
                 cpu["microcode"] = val
             elif key == "Virtualization":
                 cpu["virtualization"] = val
         mem = self.run("free -b")
-        mem_total = mem_used = mem_avail = 0
+        mem_total = mem_used = mem_avail = None
         for line in mem.splitlines():
             if line.startswith("Mem:"):
                 parts = line.split()
-                if len(parts) >= 7:
-                    mem_total, mem_used, mem_avail = int(parts[1]), int(parts[2]), int(parts[6])
+                if len(parts) >= 7 and re.fullmatch(r"[0-9]{1,16}", parts[1]):
+                    total = int(parts[1])
+                    if 0 < total <= (1 << 53) - 1:
+                        mem_total = total
+                        if re.fullmatch(r"[0-9]{1,16}", parts[2]) and int(parts[2]) <= total:
+                            mem_used = int(parts[2])
+                        if re.fullmatch(r"[0-9]{1,16}", parts[6]) and int(parts[6]) <= total:
+                            mem_avail = int(parts[6])
                 break
         gpu = self.run(
             "nvidia-smi --query-gpu=name,memory.total,driver_version,power.limit "
@@ -644,7 +692,7 @@ class Collector:
                 "total_bytes": mem_total,
                 "used_bytes": mem_used,
                 "available_bytes": mem_avail,
-                "total_human": human_bytes(mem_total),
+                "total_human": human_bytes(mem_total) if mem_total is not None else "unknown",
                 "modules": dimm_lines,
             },
             "gpu": {
@@ -848,7 +896,12 @@ class Collector:
         devices, redactions = redact_text(devices)
         self.redaction_total += redactions
         waybar = self.run("waybar --version 2>/dev/null || true")
-        theme = self.run("omarchy-theme-current 2>/dev/null || cat ~/.config/omarchy/current/theme.name 2>/dev/null || true")
+        theme = self.run("omarchy-theme-current 2>/dev/null || true")
+        if not theme:
+            try:
+                theme = read_config_text(HOME / ".config/omarchy/current/theme.name")
+            except (OSError, ValueError):
+                theme = ""
         locales = self.run("localectl status 2>/dev/null || true")
         timedate = self.run("timedatectl 2>/dev/null || true")
         fonts = self.run(
@@ -1081,9 +1134,13 @@ class Collector:
 
         omp_cfg = HOME / ".omp/agent/config.yml"
         omp_model_roles: dict[str, str] = {}
-        if omp_cfg.exists():
+        try:
+            omp_text = read_config_text(omp_cfg)
+        except (OSError, ValueError):
+            omp_text = ""
+        if omp_text:
             in_roles = False
-            for line in omp_cfg.read_text(encoding="utf-8", errors="replace").splitlines():
+            for line in omp_text.splitlines():
                 if line.startswith("modelRoles:"):
                     in_roles = True
                     continue
@@ -1096,11 +1153,12 @@ class Collector:
                     omp_model_roles[m.group(1)] = m.group(2)
         devin_cfg = HOME / ".config/devin/config.json"
         devin_data: dict[str, Any] = {}
-        if devin_cfg.exists():
-            try:
-                devin_data = json.loads(devin_cfg.read_text(encoding="utf-8"))
-            except json.JSONDecodeError:
+        try:
+            devin_data = json.loads(read_config_text(devin_cfg))
+            if not isinstance(devin_data, dict):
                 devin_data = {}
+        except (OSError, ValueError):
+            devin_data = {}
         self.data["agents"] = {
             "omp_agents": count_files("~/.omp/agent/agents", "*.md"),
             "omp_model_roles": omp_model_roles,
@@ -1129,47 +1187,87 @@ class Collector:
             links = []
             for item in sorted(skills_dir.iterdir()):
                 if item.is_symlink():
-                    links.append(f"- {item.name} -> {os.readlink(item)}")
+                    links.append(f"- {item.name}: linked skill (not copied)")
             if links:
                 lines.extend(["", "Agent skill symlinks:", *links])
         self.write("system/agents.txt", "\n".join(lines), sanitize=True)
 
+    def package_query(self, command: str) -> list[str] | None:
+        """Keep a failed native package query distinct from a successful empty one."""
+        before = len(self.commands)
+        output = self.run(command)
+        if len(self.commands) <= before or self.commands[-1].get("returncode") != 0:
+            return None
+        return output.splitlines()
+
     def collect_packages(self) -> None:
-        explicit = sorted(self.run("pacman -Qe 2>/dev/null || true").splitlines())
-        all_pkgs = sorted(self.run("pacman -Q 2>/dev/null || true").splitlines())
-        foreign = sorted(self.run("pacman -Qmq 2>/dev/null || true").splitlines())
+        distro = self.data.get("os", {}).get("id", "")
+        preferred = {"arch": "pacman", "omarchy": "pacman", "manjaro": "pacman",
+                     "ubuntu": "dpkg-query", "debian": "dpkg-query", "linuxmint": "dpkg-query",
+                     "fedora": "rpm", "rhel": "rpm", "centos": "rpm", "opensuse": "rpm"}.get(distro)
+        candidates = [preferred] if preferred else ["pacman", "dpkg-query", "rpm"]
+        available = [name for name in candidates if shutil.which(name)]
+        manager = available[0] if len(available) == 1 else None
+        explicit = all_pkgs = foreign = None
+        if manager == "pacman":
+            explicit = self.package_query("pacman -Qe")
+            all_pkgs = self.package_query("pacman -Q")
+            foreign = self.package_query("pacman -Qmq")
+            # pacman uses exit 1 for a successful query with no foreign packages.
+            if foreign is None and self.commands[-1].get("returncode") == 1:
+                # Do not infer emptiness from exit 1: it can also be a query error.
+                self.notes.append("Foreign package inventory unavailable; pacman returned no successful result.")
+        elif manager == "dpkg-query":
+            rows = self.package_query("dpkg-query -W -f='${db:Status-Status}\\t${binary:Package}\\t${Version}\\n'")
+            if rows is not None:
+                all_pkgs = []
+                for row in rows:
+                    parts = row.split("\t")
+                    if len(parts) != 3 or not parts[1].strip() or (parts[0] == "installed" and not parts[2].strip()):
+                        all_pkgs = None
+                        break
+                    if parts[0] == "installed":
+                        all_pkgs.append(parts[1] + " " + parts[2])
+            if all_pkgs is not None and shutil.which("apt-mark"):
+                manual = self.package_query("apt-mark showmanual")
+                if manual is not None:
+                    names = set(manual)
+                    explicit = [row for row in all_pkgs if row.split()[0] in names or row.split()[0].split(":")[0] in names]
+        elif manager == "rpm":
+            all_pkgs = self.package_query("rpm -qa --qf '%{NAME}.%{ARCH} %{VERSION}-%{RELEASE}\\n'")
+        # Reject malformed rows instead of importing command diagnostics as packages.
+        def valid(rows: list[str] | None, versioned: bool = True) -> list[str] | None:
+            pattern = r"[A-Za-z0-9][A-Za-z0-9+_.:@/-]*" + (r" [^\s]+" if versioned else "")
+            if rows is None or any(not re.fullmatch(pattern, row) for row in rows):
+                return None
+            return sorted(set(rows))
+        all_pkgs, explicit, foreign = valid(all_pkgs), valid(explicit), valid(foreign, False)
+        if all_pkgs is None:
+            explicit = None
+        if all_pkgs is None:
+            self.notes.append("Installed package inventory unavailable; no zero-package claim is made.")
         npm_global, _ = redact_identity(self.run("npm ls -g --depth=0 2>/dev/null || true"))
         cargo_installed, _ = redact_identity(self.run("cargo install --list 2>/dev/null || true"))
         pip_user, _ = redact_identity(self.run("python3 -m pip list --user 2>/dev/null || true"))
         gem_local, _ = redact_identity(self.run("gem list --local 2>/dev/null || true"))
-        self.packages = {
-            "explicit": explicit,
-            "all": all_pkgs,
-            "foreign": foreign,
-            "npm_global": npm_global.splitlines(),
-            "cargo_installed": cargo_installed.splitlines(),
-            "pip_user": pip_user.splitlines(),
-            "gem_local": gem_local.splitlines(),
-        }
-        self.write("packages/pacman-explicit.txt", "\n".join(explicit))
-        self.write("packages/pacman-all.txt", "\n".join(all_pkgs))
-        self.write("packages/pacman-foreign.txt", "\n".join(foreign) if foreign else "(none)")
+        self.packages = {"explicit": explicit, "all": all_pkgs, "foreign": foreign,
+                         "npm_global": npm_global.splitlines(), "cargo_installed": cargo_installed.splitlines(),
+                         "pip_user": pip_user.splitlines(), "gem_local": gem_local.splitlines()}
+        prefix = "pacman" if manager == "pacman" else "system"
+        for label, rows in (("explicit", explicit), ("all", all_pkgs), ("foreign", foreign)):
+            self.write(f"packages/{prefix}-{label}.txt", "\n".join(rows) if rows else "(none)" if rows == [] else "(unavailable)")
         self.write("packages/npm-global.txt", npm_global or "(none)")
         self.write("packages/cargo-installed.txt", cargo_installed or "(none)")
         self.write("packages/pip-user.txt", pip_user or "(none)")
         self.write("packages/gem-local.txt", gem_local or "(none)")
-        sizes = self.run(
-            "expac -H M '%m %n %v' $(pacman -Qq) 2>/dev/null | sort -rn | sed -n '1,40p' || true"
-        )
+        sizes = self.run("expac -H M '%m %n %v' $(pacman -Qq) 2>/dev/null | sort -rn | sed -n '1,40p' || true") if manager == "pacman" else ""
         self.write("packages/largest-installed.txt", sizes or "(unavailable)")
         self.data["packages"] = {
-            "explicit_count": len(explicit),
-            "all_count": len(all_pkgs),
-            "foreign_count": len(foreign),
-            "foreign": foreign,
-            "explicit": explicit,
-            "all": all_pkgs,
-            "largest": sizes.splitlines(),
+            "manager": manager or "unknown",
+            "explicit_count": len(explicit) if explicit is not None else None,
+            "all_count": len(all_pkgs) if all_pkgs is not None else None,
+            "foreign_count": len(foreign) if foreign is not None else None,
+            "foreign": foreign, "explicit": explicit, "all": all_pkgs, "largest": sizes.splitlines(),
         }
 
     # -- configuration copies ---------------------------------------------
@@ -1214,7 +1312,7 @@ class Collector:
         ]
         for src, rel in simple:
             self.copy_file(src, rel)
-        # Neovim's theme plugin is a symlink into the active Omarchy theme.
+        # Record a linked theme as omitted; ordinary files are handled by the tree.
         theme_plugin = HOME / ".config/nvim/lua/plugins/theme.lua"
         if theme_plugin.is_symlink():
             self.copy_file(theme_plugin, "applied/nvim/lua/plugins/theme.lua", follow_symlinks=True)
@@ -1343,12 +1441,12 @@ class Collector:
         # Active locale definitions only (the full file is mostly comments).
         try:
             active = []
-            for line in Path("/etc/locale.gen").read_text(encoding="utf-8", errors="replace").splitlines():
+            for line in read_config_text(Path("/etc/locale.gen")).splitlines():
                 if line.strip() and not line.lstrip().startswith("#"):
                     active.append(line)
             self.write("etc/locale.gen.active", "\n".join(active) or "(none)")
-        except OSError as exc:
-            self.notes.append(f"unreadable /etc/locale.gen: {exc}")
+        except (OSError, ValueError):
+            self.notes.append("locale definitions unavailable")
 
         # Config footprint by top-level area.
         areas: dict[str, dict[str, int]] = {}
@@ -1449,7 +1547,7 @@ The snapshot was produced by `xsnapshot collect`. The collector:
 | Omarchy | {self.data['omarchy']['version']} ({self.data['omarchy']['branch']}/{self.data['omarchy']['channel']}) |
 | Desktop | {first_nonempty(self.data['desktop']['hyprland'], 'Hyprland')} |
 | Theme | {self.data['desktop']['theme']} |
-| Pacman packages | {pkg['all_count']} total / {pkg['explicit_count']} explicit / {pkg['foreign_count']} foreign |
+| System packages | {pkg['all_count'] if pkg['all_count'] is not None else 'unavailable'} total / {pkg['explicit_count'] if pkg['explicit_count'] is not None else 'unavailable'} explicit / {pkg['foreign_count'] if pkg['foreign_count'] is not None else 'unavailable'} foreign |
 | Config files captured | {len(self.config_index)} |
 | Redactions applied | {self.redaction_total} |
 
@@ -1459,9 +1557,9 @@ The snapshot was produced by `xsnapshot collect`. The collector:
 
 ## Package inventory
 
-- Full explicit package set: `packages/pacman-explicit.txt`
-- Full installed package set: `packages/pacman-all.txt`
-- Foreign/AUR package set: `packages/pacman-foreign.txt`
+- System package inventories: `packages/` (`pacman-*` on Arch/Omarchy, `system-*` elsewhere).
+- Unavailable or inapplicable package lists and counts are null, not zero.
+- APT manual selections are explicit; foreign/AUR applies only to pacman.
 - npm globals: `packages/npm-global.txt`
 - Cargo installs: `packages/cargo-installed.txt`
 - pip user packages: `packages/pip-user.txt`
@@ -1584,11 +1682,11 @@ def preflight_report() -> dict[str, Any]:
     }
     tools = {name: shutil.which(name, path=os.defpath) is not None for name in (
         "lscpu", "free", "lspci", "lsusb", "lsblk", "findmnt", "ip", "systemctl",
-        "pacman", "npm", "cargo", "hyprctl", "wpctl", "docker",
+        "pacman", "dpkg-query", "rpm", "npm", "cargo", "hyprctl", "wpctl", "docker",
     )}
     warnings = []
-    if not tools["pacman"]:
-        warnings.append("Pacman is absent from the system search path. Arch package inventory will be incomplete; other package managers are not substituted.")
+    if not any(tools[name] for name in ("pacman", "dpkg-query", "rpm")):
+        warnings.append("No supported native package query tool is present in the system search path. Installed package inventory may be unavailable.")
     if not all(tools.values()):
         warnings.append("Some optional inventory tools are absent from the system search path. Missing tool output is not evidence of missing hardware or software.")
     if hasattr(os, "geteuid") and os.geteuid() == 0:
@@ -1788,6 +1886,8 @@ def _validate_snapshot(snap: Path) -> tuple[int, str]:
     for name in ("all", "explicit", "foreign"):
         values = data["packages"].get(name)
         count = data["packages"].get(name + "_count")
+        if name in data["packages"] and name + "_count" in data["packages"] and values is None and count is None:
+            continue
         if not isinstance(values, list) or any(not isinstance(item, str) for item in values) or type(count) is not int or count != len(values):
             raise ValueError("package inventory count or type mismatch")
     return len(indexed), hashlib.sha256(seal_path.read_bytes()).hexdigest()
