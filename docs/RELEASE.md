@@ -1,7 +1,8 @@
 # Collector release readiness
 
-No release/tag is created by these changes. This repository has no published
-release or tag as checked on 2026-11-07. The website installer remains disabled.
+This document is the release procedure. It does not itself create a release or
+tag; the published releases and their verified commits are listed on the
+repository's Releases page, and the website pins one exact tag and commit.
 
 ## Verified starting point
 
@@ -38,8 +39,8 @@ They do not inventory the developer or CI machine, and do not upload captures.
    with the operator's approval. Exercise first run, same-day refusal, explicit
    force, interrupted/partial output and website folder import. Review all
    captured files locally. Never push an unreviewed capture.
-2. Decide and supply the authorized software license. No LICENSE file exists in
-   the current collector tree; this change does not choose or grant one.
+2. License: the owner approved the MIT License on 2026-11-09. `LICENSE` in this
+   tree is the authorized text; pass its SHA-256 to the packaging tool.
 3. Prepare a code-only source package from an exact reviewed commit. Include
    bin/xsnapshot, lib/xsnapshot.py, product/privacy documentation and the approved
    license. Exclude snapshots, credentials, user configuration and repository
@@ -89,7 +90,7 @@ not delete it automatically.
 
 ## Deterministic local source candidate
 
-After the owner supplies the license and the candidate commit is reviewed, `tools/package_source.py` can prepare a local code-only candidate. It does not make a release. The license must exist in that exact commit, and its SHA-256 must match the explicitly supplied owner-approved value. The current tree still has no LICENSE, so packaging remains fail-closed; this change does not supply or select a license.
+After the candidate commit is reviewed, `tools/package_source.py` can prepare a local code-only candidate. It does not make a release. The license must exist in that exact commit, and its SHA-256 must match the explicitly supplied owner-approved value; a missing or mismatched `LICENSE` keeps packaging fail-closed.
 
 ```sh
 python3 tools/package_source.py \\
