@@ -95,6 +95,18 @@ class PortableValidationTest(unittest.TestCase):
         self.data["packages"].update(all=[None], all_count=1)
         self.write()
         self.assertEqual(self.validate(), 1)
+    def test_explicit_unknown_package_lists_validate(self):
+        for name in ("all", "explicit", "foreign"):
+            self.data["packages"][name] = None
+            self.data["packages"][name + "_count"] = None
+        self.write()
+        self.assertEqual(self.validate(), 0)
+    def test_unknown_package_list_cannot_have_a_known_count_or_missing_key(self):
+        for values in ({"all": None, "all_count": 0}, {"all": [], "all_count": None}, {"all_count": None}):
+            self.data["packages"].pop("all", None)
+            self.data["packages"].update(values)
+            self.write()
+            self.assertEqual(self.validate(), 1)
     def test_duplicate_decoded_json_key_is_rejected(self):
         self.write('{"schema":"xsnapshot/v1","sch\\u0065ma":"xsnapshot/v1"}')
         self.assertEqual(self.validate(), 1)

@@ -2,6 +2,8 @@
 
 A Linux-first, Python-standard-library collector for a point-in-time record of a PC's hardware, software and configuration index. It is a local inventory tool, not a disk image, live monitor or automatic restore system. Support depends on the inventory commands available on the machine; missing tools and protected files can leave gaps. Arch/Omarchy-specific inventory does not become portable merely because Python runs on another distribution.
 
+System package inventory supports local pacman queries (Arch/Omarchy), dpkg-query with optional APT manual selections (Debian/Ubuntu), and RPM queries. Failed, unsupported or inapplicable lists and counts are null, not a claim of zero installed packages. Only successful queries can produce an empty list. These paths have synthetic regression tests; actual Omarchy and other distribution checks remain required. Native Windows and macOS collection is not implemented by the Bash/Linux entry point.
+
 This guide is generic. The source candidate contains no workstation capture, repository history or machine-specific inventory README. The accompanying RELEASE-MANIFEST.json binds each packaged file to its source blob and exact commit. Checksums verify bytes, not who published them, whether their license was authorized, or whether the software is safe. Obtain the release through the official project and verify its approved provenance before running it.
 
 ## Requirements and review
@@ -15,7 +17,7 @@ This guide is generic. The source candidate contains no workstation capture, rep
 
 From verified source, run `./bin/xsnapshot preflight` (or add `--json`). It checks Linux/Python support, startup isolation, the private-output primitives and the presence of selected system-path tools. It only checks whether a supported Docker socket exists; it never connects. It runs no inventory command, reads no configuration bodies and creates no capture. The report contains fixed labels and booleans, not environment values, home paths, hostnames or tokens.
 
-Exit code `0` means the core prerequisites are available, not that capture, privacy or hardware compatibility is verified. Exit code `2` means a core prerequisite is missing or unsupported. Missing optional tools are warnings, not evidence of missing hardware. In particular, package collection is currently Arch/Pacman-specific; preflight does not invent support for another package manager. Do not install, enable services, grant privileges or change permissions merely to make this check green.
+Exit code `0` means the core prerequisites are available, not that capture, privacy or hardware compatibility is verified. Exit code `2` means a core prerequisite is missing or unsupported. Missing optional tools are warnings, not evidence of missing hardware. Native package collection supports pacman, dpkg-query and RPM; preflight only checks their presence and does not query a package database. Do not install, enable services, grant privileges or change permissions merely to make this check green.
 
 The launcher uses Bash startup isolation and Python `-I -S`; inventory command shells suppress startup files, imported functions and inherited shell options. Ordinary inventory programs still use the operator's PATH and their own configuration. This is not an execution sandbox or an offline guarantee. Directly running an unisolated Python script or sourcing the launcher is outside this startup guarantee. Prefer the executable launcher; a deliberate direct invocation must use `/usr/bin/python3 -I -S lib/xsnapshot.py preflight`.
 
@@ -33,6 +35,8 @@ printf 'Review locally: %s/snapshots/review/REPORT.md\n' "$state"
 ```
 
 Collection reads allow-listed information and writes local files. It does not upload the capture to the xsnapshot website. A repeated collection into the same capture must refuse to overwrite it. `--force` is a deliberate replacement, not a repair step: preserve anything needed and review the exact destination first. Do not run it just to dismiss an error.
+
+Missing CPU/RAM readings stay unknown. Config copies are limited to readable regular UTF-8 files of at most 1 MiB, without symlink traversal or sudo retries. Linked dotfiles/themes are omitted; the standard os-release vendor alias is the only fixed exception. Review the notes for capture gaps.
 
 Keep the complete output folder. It contains snapshot JSON, the report, the artifact seal and supporting local files. Review REPORT.md, the excluded-material list and every retained configuration. Redaction is best-effort, not proof that all secrets or personal details were removed. Configurations, environment values, inventory and command output can reveal sensitive context. If anything should not be included, correct the source capture before sharing. Validation checks structure and integrity; it does not establish privacy or provenance by itself.
 
@@ -55,6 +59,8 @@ The JSON contains `docker.capture_status` (`captured`, `partial` or `unavailable
 A local Unix socket establishes transport, not the daemon's physical location or trustworthiness: a local service can proxy elsewhere. `daemon_identity_verified` is therefore always false. This change does not sandbox other collector commands, validate every local executable, or make redaction a privacy guarantee. Docker names, image references and other successful inventory output still require local review.
 
 Sources: [Docker contexts](https://docs.docker.com/engine/manage-resources/contexts/), [Docker CLI configuration and environment](https://docs.docker.com/reference/cli/docker/), and [rootless socket locations](https://docs.docker.com/engine/security/rootless/tips/).
+
+Package query references: [pacman](https://man.archlinux.org/man/pacman.8.en), [dpkg-query](https://manpages.debian.org/bookworm/dpkg/dpkg-query.1.en.html), and [apt-mark](https://manpages.debian.org/bookworm/apt/apt-mark.8.en.html). No repository refresh, package installation or upgrade is requested.
 
 ## Optional website use
 

@@ -147,7 +147,7 @@ class PrivateOutputTest(unittest.TestCase):
         with patch.object(x, "HOME", self.root), \
                 patch.object(Path, "is_symlink", lambda path: path == theme and is_link), \
                 patch.object(Path, "glob", return_value=[]), \
-                patch.object(Path, "read_text", side_effect=FileNotFoundError()), \
+                patch.object(x, "read_config_text", side_effect=FileNotFoundError()), \
                 patch.object(self.collector, "sudo_run", return_value=""), \
                 patch.object(self.collector, "copy_file") as copy, \
                 patch.object(self.collector, "copy_tree", return_value=0) as tree:
