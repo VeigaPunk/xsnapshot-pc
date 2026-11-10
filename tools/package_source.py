@@ -16,10 +16,14 @@ import tarfile
 # Explicit source-to-archive mapping. Never add a recursive directory or git archive.
 FILES = {
     'bin/xsnapshot': 'bin/xsnapshot',
+    'bin/xsnapshot-repo': 'bin/xsnapshot-repo',
     'lib/xsnapshot.py': 'lib/xsnapshot.py',
+    'lib/xsnapshot_repo.py': 'lib/xsnapshot_repo.py',
     'docs/DISTRIBUTION.md': 'README.md',
+    'docs/PRIVATE-REPO.md': 'docs/PRIVATE-REPO.md',
     'LICENSE': 'LICENSE',
 }
+EXECUTABLE = {'bin/xsnapshot', 'bin/xsnapshot-repo'}
 MAX_FILE_BYTES = 1024 * 1024
 OFFICIAL_REPOSITORY = 'https://github.com/VeigaPunk/xsnapshot-pc'
 
@@ -73,7 +77,7 @@ def build(repo: Path, commit: str, license_sha256: str) -> tuple[str, bytes, byt
         digest = hashlib.sha256(body).hexdigest()
         if source == 'LICENSE' and digest != license_sha256:
             raise PackageError('LICENSE does not match the supplied owner-approved hash. No package was created.')
-        archive_mode = 0o755 if target == 'bin/xsnapshot' else 0o644
+        archive_mode = 0o755 if target in EXECUTABLE else 0o644
         payloads.append((target, body, archive_mode))
         entries.append({'path': target, 'source_path': source, 'git_blob': oid,
                         'bytes': size, 'sha256': digest, 'mode': oct(archive_mode)})

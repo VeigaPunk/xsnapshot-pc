@@ -25,8 +25,12 @@ class SourcePackageTest(unittest.TestCase):
         self.git('config', 'user.email', 'fixture@example.invalid')
         self.license = b'SYNTHETIC TEST LICENSE ONLY. Not a project license.\n'
         bodies = {'bin/xsnapshot': b'#!/bin/sh\nexit 99 # inert fixture, never execute\n',
+                  'bin/xsnapshot-repo': b'#!/bin/sh\nexit 99 # inert fixture, never execute\n',
                   'lib/xsnapshot.py': b'# inert synthetic source\n',
-                  'docs/DISTRIBUTION.md': b'# Generic source guide\n', 'LICENSE': self.license,
+                  'lib/xsnapshot_repo.py': b'# inert synthetic private-repository source\n',
+                  'docs/DISTRIBUTION.md': b'# Generic source guide\n',
+                  'docs/PRIVATE-REPO.md': b'# Generic private-repository guide\n',
+                  'LICENSE': self.license,
                   'README.md': b'MACHINE-SPECIFIC-INVENTORY-MUST-NOT-BUNDLE\n',
                   'snapshots/private.txt': b'SYNTHETIC-CAPTURE-MUST-NOT-BUNDLE\n',
                   '.env': b'SYNTHETIC-ENV-MUST-NOT-BUNDLE\n'}
@@ -68,13 +72,16 @@ class SourcePackageTest(unittest.TestCase):
                 self.assertTrue(member.isfile())
                 self.assertEqual((member.uid, member.gid, member.mtime), (0, 0, 0))
                 self.assertEqual(member.uname + member.gname, '')
-                self.assertEqual(member.mode, 0o755 if member.name.endswith('/bin/xsnapshot') else 0o644)
+                self.assertEqual(member.mode, 0o755 if member.name.endswith(('/bin/xsnapshot', '/bin/xsnapshot-repo')) else 0o644)
             self.assertEqual(archive.extractfile(prefix + 'RELEASE-MANIFEST.json').read(), manifest_raw)
             for entry in manifest['files']:
                 body = archive.extractfile(prefix + entry['path']).read()
                 self.assertEqual(len(body), entry['bytes'])
                 self.assertEqual(hashlib.sha256(body).hexdigest(), entry['sha256'])
                 self.assertEqual(entry['git_blob'], self.git('rev-parse', self.commit + ':' + entry['source_path']))
+            self.assertEqual(sorted(entry['source_path'] for entry in manifest['files']), sorted(FILES))
+            self.assertEqual(sorted(entry['path'] for entry in manifest['files']), sorted(FILES.values()))
+            self.assertEqual(archive.extractfile(prefix + 'docs/PRIVATE-REPO.md').read(), b'# Generic private-repository guide\n')
         raw = gzip.decompress(compressed)
         for forbidden in [b'MACHINE-SPECIFIC', b'SYNTHETIC-CAPTURE', b'SYNTHETIC-ENV', b'DIRTY WORKTREE', b'.git/']:
             self.assertNotIn(forbidden, raw)
@@ -96,16 +103,21 @@ class SourcePackageTest(unittest.TestCase):
                 build(self.repo, commit, self.license_hash)
 
     def test_symlinks_and_missing_required_code_are_rejected(self):
-        code = self.repo / 'lib/xsnapshot.py'
-        code.unlink()
-        code.symlink_to('../.env')
-        commit = self.commit_all()
-        with self.assertRaisesRegex(PackageError, 'regular Git blob'):
-            build(self.repo, commit, self.license_hash)
-        code.unlink()
-        commit = self.commit_all()
-        with self.assertRaisesRegex(PackageError, 'Missing required'):
-            build(self.repo, commit, self.license_hash)
+        for source in ['lib/xsnapshot.py', 'lib/xsnapshot_repo.py', 'bin/xsnapshot-repo', 'docs/PRIVATE-REPO.md']:
+            with self.subTest(source=source):
+                code = self.repo / source
+                original = code.read_bytes()
+                code.unlink()
+                code.symlink_to('../.env')
+                commit = self.commit_all()
+                with self.assertRaisesRegex(PackageError, 'regular Git blob'):
+                    build(self.repo, commit, self.license_hash)
+                code.unlink()
+                commit = self.commit_all()
+                with self.assertRaisesRegex(PackageError, 'Missing required'):
+                    build(self.repo, commit, self.license_hash)
+                code.write_bytes(original)
+                self.commit_all()
 
     def test_binary_empty_and_over_limit_source_are_rejected(self):
         for body in [b'\0binary', b'', b'\xff', b'x' * (1024 * 1024 + 1)]:

@@ -19,14 +19,18 @@
 xsnapshot-pc records a single Linux workstation as a reviewable, sanitized tree that can be
 diffed against a later capture. The collector is deliberately boring: Python 3 standard
 library only, read-only inventory commands, no upload, no package installation, no mutation of
-the host.
+the host. An optional, separate tool can push the state folder to a private GitHub repository
+the operator owns; the collector itself never does, and the tool's `init` never overwrites an
+existing `README.md` in that folder (see [`docs/PRIVATE-REPO.md`](docs/PRIVATE-REPO.md)).
 
 | Path | Purpose |
 |---|---|
 | `bin/xsnapshot` | Thin bash entry point; pins `--root` to this repository and execs the collector. |
 | `lib/xsnapshot.py` | The collector: allow-listed file copy, redaction, command inventory, report/JSON writers. |
+| `bin/xsnapshot-repo` | Optional second entry point; execs the private-repository tool. Not used by the collector. |
+| `lib/xsnapshot_repo.py` | The private-repository tool: one git commit per snapshot, privacy checks, `gh`/remote handling. |
 | `snapshots/<YYYY-MM-DD>/` | One directory per capture (`applied/`, `etc/`, `packages/`, `system/`, `data/`, `REPORT.md`). |
-| `docs/` | The privacy policy and design notes: [`PRIVACY.md`](docs/PRIVACY.md) and [`WEBSITE.md`](docs/WEBSITE.md) (a future contract for a viewer website; no site is shipped). |
+| `docs/` | The privacy policy and design notes: [`PRIVACY.md`](docs/PRIVACY.md), [`PRIVATE-REPO.md`](docs/PRIVATE-REPO.md) and [`WEBSITE.md`](docs/WEBSITE.md) (a future contract for a viewer website; no site is shipped). |
 | `templates/`, `tests/` | Future capture templates (currently empty) and the stdlib unittest suite. |
 
 Snapshot output is committed on purpose — `.gitignore` excludes only Python bytecode,
@@ -63,7 +67,11 @@ The redactor is a second line of defense, not the primary control; the allow-lis
 `lib/xsnapshot.py` (`collect_configs`, `copy_file`, `copy_tree`) is. `docs/PRIVACY.md` states
 the exact rule set, the verified-clean checks for the committed capture, the residual limits of
 the mechanism, and the review procedure before a snapshot is pushed. Nothing in the collector
-reaches the network: it shells out to local inventory commands only.
+reaches the network: it shells out to local inventory commands only. The one optional exception
+is the separate `bin/xsnapshot-repo` tool, which pushes the state folder to a private GitHub
+repository the operator owns through `git` and `gh`, and makes an unauthenticated HTTPS request
+to a GitHub remote to detect a known-public repository. It never contacts xsnapshot.app, and the
+collector neither imports nor calls it.
 
 ## Executive summary
 
@@ -505,8 +513,10 @@ Behavior notes:
   `validate` is an integrity result, not a privacy review.
 - `list` reads `captured_at` from each `data/snapshot.json`; an unparsable file is reported as
   `invalid-json` rather than hidden.
-- A capture is written under the repository and never uploaded; review it before committing
-  (see [`docs/PRIVACY.md`](docs/PRIVACY.md)).
+- A capture is written under the repository and never uploaded by the collector; review it
+  before committing (see [`docs/PRIVACY.md`](docs/PRIVACY.md)). The optional
+  `bin/xsnapshot-repo` tool is the only part that uploads, and only to a private GitHub
+  repository you own (see [`docs/PRIVATE-REPO.md`](docs/PRIVATE-REPO.md)).
 
 ## Explicit Arch package set
 

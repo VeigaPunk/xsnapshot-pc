@@ -191,7 +191,7 @@ class PreserveInnocuousTextTest(unittest.TestCase):
         self.assertEqual(count, 0)
 
     def test_token_helper_path_is_preserved(self) -> None:
-        text = "Environment=SHIM_TOKEN_CMD=/home/user/.local/bin/token-helper"
+        text = 'Environment=SHIM_TOKEN_CMD="$XS_CREDENTIAL_HELPER"'  # Indirection, never a home-derived path.
         out, count = redact_text(text)
         self.assertEqual(out, text)
         self.assertEqual(count, 0)

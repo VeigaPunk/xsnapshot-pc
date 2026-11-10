@@ -1,13 +1,14 @@
 # xsnapshot-pc source candidate
 
-A Linux-first, Python-standard-library collector for a point-in-time record of a PC's hardware, software and configuration index. It is a local inventory tool, not a disk image, live monitor or automatic restore system. Support depends on the inventory commands available on the machine; missing tools and protected files can leave gaps. Arch/Omarchy-specific inventory does not become portable merely because Python runs on another distribution.
+A Linux-first, Python-standard-library collector for a point-in-time record of a PC's hardware, software and configuration index. It is a local inventory tool, not a disk image, live monitor or automatic restore system. Support depends on the inventory commands available on the machine; missing tools and protected files can leave gaps. Arch/Omarchy-specific inventory does not become portable merely because Python runs on another distribution. The package also contains an optional, separate private-repository tool (`bin/xsnapshot-repo`, `lib/xsnapshot_repo.py`, documented in `docs/PRIVATE-REPO.md`); the collector does not use it.
 
-This guide is generic. The source candidate contains no workstation capture, repository history or machine-specific inventory README. The accompanying RELEASE-MANIFEST.json binds each packaged file to its source blob and exact commit. Checksums verify bytes, not who published them, whether their license was authorized, or whether the software is safe. Obtain the release through the official project and verify its approved provenance before running it.
+This guide is generic. The source candidate contains no workstation capture, repository history or machine-specific inventory README. It carries seven files: `bin/xsnapshot`, `bin/xsnapshot-repo`, `lib/xsnapshot.py`, `lib/xsnapshot_repo.py`, `LICENSE`, this guide as the package `README.md`, and `docs/PRIVATE-REPO.md`. The accompanying RELEASE-MANIFEST.json binds each packaged file to its source blob and exact commit. Checksums verify bytes, not who published them, whether their license was authorized, or whether the software is safe. Obtain the release through the official project and verify its approved provenance before running it.
 
 ## Requirements and review
 
 - Linux, Bash at `/bin/bash` and system Python 3.10 or newer at `/usr/bin/python3`. No third-party Python package is required. The launcher intentionally ignores Python shims on the user PATH.
 - Read the exact packaged `lib/xsnapshot.py`, especially the configuration allow-list, commands and redaction logic, before collection. Do not run a package from an unverified source.
+- The optional private-repository tool is separate: read `lib/xsnapshot_repo.py` and `docs/PRIVATE-REPO.md` before running `bin/xsnapshot-repo`. It is the only packaged component that pushes data anywhere, and only to a private GitHub repository the operator owns.
 - Most inventory commands inherit the machine's configuration. Review configured services and command wrappers before execution; do not assume all subprocesses are offline. Docker daemon inventory has the narrower boundary described below.
 - Start without sudo. Protected information can be omitted. Do not grant privileges merely to make a capture look complete.
 
@@ -32,7 +33,7 @@ state="$(mktemp -d "${TMPDIR:-/tmp}/xsnapshot-local.XXXXXX")"
 printf 'Review locally: %s/snapshots/review/REPORT.md\n' "$state"
 ```
 
-Collection reads allow-listed information and writes local files. It does not upload the capture to the xsnapshot website. A repeated collection into the same capture must refuse to overwrite it. `--force` is a deliberate replacement, not a repair step: preserve anything needed and review the exact destination first. Do not run it just to dismiss an error.
+Collection reads allow-listed information and writes local files. The collector does not upload the capture to the xsnapshot website, and it performs no network I/O at all. The optional `bin/xsnapshot-repo` tool is the one exception in the package: it commits the state folder and pushes it through `git` and `gh` to a private GitHub repository the operator owns. It also makes an unauthenticated request to an HTTPS GitHub remote to detect a known-public repository, and never contacts xsnapshot.app. Running the collector alone still uploads nothing. A repeated collection into the same capture must refuse to overwrite it. `--force` is a deliberate replacement, not a repair step: preserve anything needed and review the exact destination first. Do not run it just to dismiss an error.
 
 Keep the complete output folder. It contains snapshot JSON, the report, the artifact seal and supporting local files. Review REPORT.md, the excluded-material list and every retained configuration. Redaction is best-effort, not proof that all secrets or personal details were removed. Configurations, environment values, inventory and command output can reveal sensitive context. If anything should not be included, correct the source capture before sharing. Validation checks structure and integrity; it does not establish privacy or provenance by itself.
 
@@ -55,6 +56,10 @@ The JSON contains `docker.capture_status` (`captured`, `partial` or `unavailable
 A local Unix socket establishes transport, not the daemon's physical location or trustworthiness: a local service can proxy elsewhere. `daemon_identity_verified` is therefore always false. This change does not sandbox other collector commands, validate every local executable, or make redaction a privacy guarantee. Docker names, image references and other successful inventory output still require local review.
 
 Sources: [Docker contexts](https://docs.docker.com/engine/manage-resources/contexts/), [Docker CLI configuration and environment](https://docs.docker.com/reference/cli/docker/), and [rootless socket locations](https://docs.docker.com/engine/security/rootless/tips/).
+
+## Optional private repository
+
+`bin/xsnapshot-repo` is a separate tool in the same package. It turns a state folder into one commit per validated snapshot, normally headed for the operator's private GitHub repository. A deliberate non-GitHub destination is accepted only with the exact effective URL and an explicit `--assume-private` assertion. The collector neither imports nor calls it. It refuses known-public destinations, never force-pushes or rewrites history, avoids `git add -A`, and commits sealed raw bytes without executing hooks, filters or signing programs. It uses the operator's git identity, local config and their chosen credential helper/SSH authentication. No git global/system configuration is written, internal config and metadata links are refused, and credential-bearing URLs are not accepted or printed. Read `docs/PRIVATE-REPO.md` for exact behavior, review requirements, limitations, update instructions and how remote visibility is established.
 
 ## Optional website use
 
