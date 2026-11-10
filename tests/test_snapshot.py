@@ -209,7 +209,7 @@ class RawIdentifierScanTest(unittest.TestCase):
             self.assertTrue(pattern.search(CANARY_SAMPLES[name]), name)
 
     def test_no_local_username_in_config_files(self) -> None:
-        username = Path.home().name
+        username = "xsnapshot_test_source_account"  # Never derive security assertions from the developer account.
         findings = []
         for base in ("applied", "etc"):
             for path in sorted((SNAPSHOT / base).rglob("*")):

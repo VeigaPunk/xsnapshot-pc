@@ -15,6 +15,12 @@ the public `snapshots/2026-10-19/` tree. A file that might contain a secret or a
 identifier must be left out of the allow-list; the redactor is a second line of defense and is
 not a substitute for that decision.
 
+This section describes the collector's own repository. A person who keeps their state folder in
+a private GitHub repository of their own, through the optional `bin/xsnapshot-repo` tool
+([`PRIVATE-REPO.md`](PRIVATE-REPO.md)), is not publishing it here — but the review gate still
+applies, because a private repository is readable by everyone the owner invites and is stored
+on GitHub's servers.
+
 ## Model
 
 Three controls, in order of strength:
@@ -38,6 +44,14 @@ The collector performs **no network I/O**. It shells out to local inventory comm
 (`hostnamectl`, `lscpu`, `dmidecode`, `lsblk`, `systemctl`, `pacman`, `docker`, `hyprctl`,
 `npm`, `cargo`, and similar) and writes files under the snapshot directory. Nothing is uploaded
 or executed from captured content.
+
+That statement is scoped to the collector. The optional, separate `bin/xsnapshot-repo` tool
+([`PRIVATE-REPO.md`](PRIVATE-REPO.md)) is the one exception: it commits the state folder and
+pushes it to a private GitHub repository the operator owns, through `git` and `gh`; it also
+makes an unauthenticated HTTPS request to a GitHub remote solely to detect a public repository
+when `gh` cannot establish privacy. That probe cannot prove a repository private. It never
+contacts xsnapshot.app, sends no telemetry, and the collector neither imports nor calls it.
+Running the collector alone still uploads nothing.
 
 ## Allow-list
 
@@ -368,6 +382,11 @@ and package counts); it is **not** a privacy check. Before committing or publish
    the current collector first, then re-run this review. The verified-clean checklist above must
    still hold (no UUID, MAC, IPv4/IPv6, machine-id, or serial hits; no account-name or home-path
    hits), and any residual limit that applies must be accepted by the operator for that capture.
+
+The same review applies before the optional `bin/xsnapshot-repo` tool pushes a state folder to a
+private GitHub repository: read `REPORT.md` and the retained configuration copies first, because
+redaction is not a guarantee and a private repository is still readable by everyone the owner
+invites. See [`PRIVATE-REPO.md`](PRIVATE-REPO.md).
 
 ## Reporting a leak
 
