@@ -28,6 +28,17 @@ function Get-XsnapshotIsWindows {
     return ($env:OS -eq 'Windows_NT') -or ([System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT)
 }
 
+
+function New-XsnapshotBag {
+    $bag = New-Object System.Collections.Specialized.OrderedDictionary
+    $argsLocal = $args
+    if ($argsLocal.Count % 2 -ne 0) { throw 'New-XsnapshotBag requires name/value pairs' }
+    for ($i = 0; $i -lt $argsLocal.Count; $i += 2) {
+        $bag[[string]$argsLocal[$i]] = $argsLocal[$i + 1]
+    }
+    return $bag
+}
+
 function Initialize-XsnapshotIdentity {
     $script:UserName = [Environment]::UserName
     $script:HomePath = [Environment]::GetFolderPath('UserProfile')
@@ -954,7 +965,11 @@ function Get-XsnapshotServiceInventory {
             account = $startName
         }) | Out-Null
     }
-    return @{ Services = @($objs); Text = ($lines -join "`n"); Count = $objs.Count }
+    $serviceResult = New-Object System.Collections.Specialized.OrderedDictionary
+    $serviceResult.Add('Services', $objs.ToArray()) | Out-Null
+    $serviceResult.Add('Text', ($lines -join "`n")) | Out-Null
+    $serviceResult.Add('Count', [int]$objs.Count) | Out-Null
+    return $serviceResult
 }
 
 function Get-XsnapshotUninstallEntries {
