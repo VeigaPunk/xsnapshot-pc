@@ -658,7 +658,7 @@ function Get-XsnapshotHardwareInventory {
         $modules.Add(("{0} {1} {2} MT/s {3}" -f (Format-XsnapshotBytes $cap), $part, $speed, $bank)) | Out-Null
     }
     if ($totalMem -eq 0 -and $cs0 -and $cs0.TotalPhysicalMemory) { $totalMem = [int64]$cs0.TotalPhysicalMemory }
-    $avail = 0
+    $avail = [int64]0
     try {
         $os = @(Get-CimInstance -ClassName Win32_OperatingSystem -ErrorAction Stop)
         if ($os.Count -gt 0 -and $os[0].FreePhysicalMemory) { $avail = [int64]$os[0].FreePhysicalMemory * 1024 }
@@ -704,7 +704,7 @@ function Get-XsnapshotHardwareInventory {
         }
         memory = [ordered]@{
             total_bytes = [int64]$totalMem
-            used_bytes = [int64]([Math]::Max(0, $totalMem - $avail))
+            used_bytes = [int64]([Math]::Max([int64]0, [int64]($totalMem - $avail)))
             available_bytes = [int64]$avail
             total_human = Format-XsnapshotBytes $totalMem
             modules = @($modules)
@@ -1509,8 +1509,7 @@ function Invoke-XsnapshotValidate {
     foreach ($rel in $indexed.Keys) {
         if (-not $indexExpected.Contains($rel)) { throw 'artifact index does not exactly cover the capture' }
         $path = Join-Path $snap ($rel -replace '/', '\')
-        $size = [int]((Get-Item -LiteralPath $path).Length)
-        if ([int]$itemBytes -eq $null) {}
+        $size = [int64]((Get-Item -LiteralPath $path).Length)
         if ([int]$indexed[$rel].bytes -ne $size) { throw "artifact byte size mismatch: $rel" }
         if ([string]$indexed[$rel].sha256 -ne $seal[$rel]) { throw "artifact hash mismatch: $rel" }
     }
