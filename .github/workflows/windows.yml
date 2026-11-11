@@ -1,0 +1,55 @@
+name: Verify Windows collector
+on:
+  pull_request:
+  push:
+    branches: [main, feat/windows-collector]
+permissions:
+  contents: read
+jobs:
+  verify-windows:
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Parse the PowerShell collector
+        shell: powershell
+        run: |
+          $files = @('lib\XSnapshot.ps1', 'bin\xsnapshot.ps1', 'install.ps1', 'tests\windows\redact.tests.ps1')
+          foreach ($f in $files) {
+            $errs = $null
+            $null = [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $f), [ref]$null, [ref]$errs)
+            if ($errs -and $errs.Count -gt 0) {
+              $errs | ForEach-Object { Write-Host $_.ToString() }
+              throw "parse failed: $f"
+            }
+          }
+      - name: Run redaction unit tests
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File tests\windows\redact.tests.ps1
+      - name: Preflight and collect a hardware-and-package snapshot of the runner
+        shell: powershell
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File .\bin\xsnapshot.ps1 --root "$env:RUNNER_TEMP\xsnapshot-data" preflight
+          powershell -NoProfile -ExecutionPolicy Bypass -File .\bin\xsnapshot.ps1 --root "$env:RUNNER_TEMP\xsnapshot-data" collect --snapshot ci-windows-runner
+          powershell -NoProfile -ExecutionPolicy Bypass -File .\bin\xsnapshot.ps1 --root "$env:RUNNER_TEMP\xsnapshot-data" validate
+      - name: Cross-validate the capture with the Linux schema checker
+        shell: powershell
+        run: |
+          python -c "import sys; sys.path.insert(0, '.'); from lib.xsnapshot import _validate_snapshot; from pathlib import Path; c,d=_validate_snapshot(Path(r'$env:RUNNER_TEMP')/'xsnapshot-data'/'snapshots'/'ci-windows-runner'); print(f'python valid: {c} artifacts, seal {d[:12]}')"
+      - name: Refuse to publish identifiers in a smoke review of REPORT.md
+        shell: powershell
+        run: |
+          $report = Get-Content -Raw "$env:RUNNER_TEMP\xsnapshot-data\snapshots\ci-windows-runner\REPORT.md"
+          if ($report -match $env:USERNAME) { throw 'REPORT.md still contains the runner account name' }
+          if ($report -match [regex]::Escape($env:USERPROFILE)) { throw 'REPORT.md still contains the profile path' }
+          $uuidRe = [regex]'\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b'
+          $snapRoot = "$env:RUNNER_TEMP\xsnapshot-data\snapshots\ci-windows-runner"
+          $json = Get-Content -Raw (Join-Path $snapRoot 'data\snapshot.json')
+          if ($uuidRe.IsMatch($json)) { throw 'data/snapshot.json still contains UUID shapes' }
+          $appx = Join-Path $snapRoot 'packages\appx.txt'
+          if (Test-Path -LiteralPath $appx) {
+            $appxText = Get-Content -Raw $appx
+            if ($uuidRe.IsMatch($appxText)) { throw 'packages/appx.txt still contains UUID shapes' }
+          }
