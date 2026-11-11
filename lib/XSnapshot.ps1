@@ -1511,7 +1511,8 @@ function Invoke-XsnapshotValidate {
         if ($seal.ContainsKey($rel)) { throw 'duplicate artifact seal entry' }
         $seal[$rel] = $digest
     }
-    $onDiskMinusSeal = New-Object 'System.Collections.Generic.HashSet[string]' ([string[]]$onDisk)
+    $onDiskMinusSeal = New-Object 'System.Collections.Generic.HashSet[string]'
+    foreach ($item in $onDisk) { [void]$onDiskMinusSeal.Add($item) }
     [void]$onDiskMinusSeal.Remove('ARTIFACTS.sha256')
     if ($seal.Count -ne $onDiskMinusSeal.Count) { throw 'artifact seal does not exactly cover the capture' }
     foreach ($rel in $seal.Keys) {
@@ -1529,7 +1530,8 @@ function Invoke-XsnapshotValidate {
         if ($indexed.ContainsKey($rel)) { throw 'duplicate artifact index entry' }
         $indexed[$rel] = $item
     }
-    $indexExpected = New-Object 'System.Collections.Generic.HashSet[string]' ([string[]]$onDisk)
+    $indexExpected = New-Object 'System.Collections.Generic.HashSet[string]'
+    foreach ($item in $onDisk) { [void]$indexExpected.Add($item) }
     [void]$indexExpected.Remove('data/snapshot.json')
     [void]$indexExpected.Remove('ARTIFACTS.sha256')
     if ($indexed.Count -ne $indexExpected.Count) { throw 'artifact index does not exactly cover the capture' }
