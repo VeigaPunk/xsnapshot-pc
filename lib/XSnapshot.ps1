@@ -520,6 +520,15 @@ function Get-XsnapshotNativeOutput {
     return $stdout
 }
 
+
+function Get-XsnapshotProperty {
+    param($Object, [string]$Name, $Default = $null)
+    if ($null -eq $Object) { return $Default }
+    $prop = $Object.PSObject.Properties[$Name]
+    if ($null -eq $prop) { return $Default }
+    return $prop.Value
+}
+
 function Get-XsnapshotFirst {
     param([string[]]$Values, [string]$Default = 'unknown')
     foreach ($v in $Values) {
@@ -773,13 +782,16 @@ function Get-XsnapshotStorageInventory {
     $volObjs = New-Object System.Collections.Generic.List[object]
     foreach ($v in $vols) {
         $letter = ''
-        if ($v.DriveLetter) { $letter = [string]$v.DriveLetter }
-        $fs = Get-XsnapshotFirst @($v.FileSystemType, $v.FileSystem)
-        $type = Get-XsnapshotFirst @($v.DriveType)
+        $driveLetter = Get-XsnapshotProperty $v 'DriveLetter'
+        if ($driveLetter) { $letter = [string]$driveLetter }
+        $fs = Get-XsnapshotFirst @((Get-XsnapshotProperty $v 'FileSystemType'), (Get-XsnapshotProperty $v 'FileSystem'))
+        $type = Get-XsnapshotFirst @((Get-XsnapshotProperty $v 'DriveType'))
         $size = 0; $free = 0
-        if ($v.Size) { $size = [int64]$v.Size }
-        if ($v.SizeRemaining) { $free = [int64]$v.SizeRemaining }
-        $label = Get-XsnapshotFirst @($v.FileSystemLabel) ''
+        $sizeVal = Get-XsnapshotProperty $v 'Size'
+        $freeVal = Get-XsnapshotProperty $v 'SizeRemaining'
+        if ($sizeVal) { $size = [int64]$sizeVal }
+        if ($freeVal) { $free = [int64]$freeVal }
+        $label = Get-XsnapshotFirst @((Get-XsnapshotProperty $v 'FileSystemLabel')) ''
         $volLines.Add(("{0}: {1} {2} {3} free={4}" -f $letter, $fs, $type, (Format-XsnapshotBytes $size), (Format-XsnapshotBytes $free))) | Out-Null
         $volObjs.Add([ordered]@{
             drive_letter = $letter
@@ -986,10 +998,10 @@ function Get-XsnapshotUninstallEntries {
         try { $keys = @(Get-ChildItem -LiteralPath $root -ErrorAction Stop) } catch { continue }
         foreach ($k in $keys) {
             try { $p = Get-ItemProperty -LiteralPath $k.PSPath -ErrorAction Stop } catch { continue }
-            $name = $p.DisplayName
+            $name = Get-XsnapshotProperty $p 'DisplayName'
             if ([string]::IsNullOrWhiteSpace($name)) { continue }
-            $ver = Get-XsnapshotFirst @($p.DisplayVersion) ''
-            $pub = Get-XsnapshotFirst @($p.Publisher) ''
+            $ver = Get-XsnapshotFirst @((Get-XsnapshotProperty $p 'DisplayVersion')) ''
+            $pub = Get-XsnapshotFirst @((Get-XsnapshotProperty $p 'Publisher')) ''
             $line = ($name.Trim() + ' ' + $ver + ' (' + $pub + ')').Trim()
             $line = (Invoke-XsnapshotRedactIdentity -Text $line).Text
             $key = $line.ToLowerInvariant()
