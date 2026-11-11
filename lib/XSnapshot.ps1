@@ -1311,7 +1311,7 @@ function Invoke-XsnapshotCollect {
         return 2
     }
     $snapParent = Split-Path -Parent $outPath
-    if (Test-Path -LiteralPath $snapParent -and (Test-XsnapshotReparsePoint -Path $snapParent)) {
+    if ((Test-Path -LiteralPath $snapParent) -and (Test-XsnapshotReparsePoint -Path $snapParent)) {
         Write-Error 'refusing a symlink snapshot destination'
         return 2
     }
