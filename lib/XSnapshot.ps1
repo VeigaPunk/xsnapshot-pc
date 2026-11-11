@@ -1028,7 +1028,7 @@ function Get-XsnapshotWingetPackages {
         $t = (Invoke-XsnapshotRedact -Text $t).Text
         $lines.Add($t) | Out-Null
     }
-    return @($lines)
+    return [string[]]@($lines)
 }
 
 function Get-XsnapshotAppxPackages {
@@ -1043,7 +1043,7 @@ function Get-XsnapshotAppxPackages {
         $line = '{0} {1}' -f $p.Name, $p.Version
         $lines.Add($line) | Out-Null
     }
-    return @($lines)
+    return [string[]]@($lines)
 }
 
 function Get-XsnapshotLanguagePackages {
@@ -1168,7 +1168,7 @@ function Get-XsnapshotAllowList {
             }
         } catch {}
     }
-    return @($list)
+    return [object[]]($list.ToArray())
 }
 
 function Write-XsnapshotReport {
