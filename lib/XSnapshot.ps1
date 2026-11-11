@@ -782,15 +782,15 @@ function Get-XsnapshotStorageInventory {
         }) | Out-Null
     }
     $storage = [ordered]@{
-        disks = @($diskObjs)
-        volumes = @($volObjs)
-        lsblk_json = $null
+        disks = @($diskObjs.ToArray())
+        volumes = @($volObjs.ToArray())
         df = ($volLines -join "`n")
         swap = 'not applicable (Windows page file; path and identifiers omitted)'
-        zram = $null
-        snapper = $null
         encryption = 'BitLocker identifiers omitted; presence not attested'
     }
+    $storage['lsblk_json'] = $null
+    $storage['zram'] = $null
+    $storage['snapper'] = $null
     $text = (("DISKS`n" + ($diskLines -join "`n") + "`n`nVOLUMES`n" + ($volLines -join "`n")))
     return @{ Storage = $storage; Text = $text }
 }
@@ -821,13 +821,13 @@ function Get-XsnapshotNetworkInventory {
         $fw = ($profiles | ForEach-Object { '{0} enabled={1}' -f $_.Name, $_.Enabled }) -join '; '
     } catch { $fw = "unavailable: $_" }
     $network = [ordered]@{
-        links = @($objs)
+        links = @($objs.ToArray())
         routes = 'route destinations and gateways omitted (identifiers)'
         listeners = 'listening addresses omitted (identifiers)'
         dns = 'DNS server addresses omitted (identifiers)'
         firewall = $fw
-        rfkill = $null
     }
+    $network['rfkill'] = $null
     return @{ Network = $network; Text = (($lines -join "`n") + "`n`nfirewall: $fw") }
 }
 
@@ -868,9 +868,9 @@ function Get-XsnapshotBootInventory {
         efibootmgr = 'EFI boot entry identifiers omitted'
         secure_boot = $secure
         tpm = $tpm
-        cmdline = $null
         firmware = $firmware
     }
+    $boot['cmdline'] = $null
     $text = "firmware=$firmware`nsecure_boot=$secure`ntpm=$tpm"
     return @{ Boot = $boot; Text = $text }
 }
@@ -917,15 +917,15 @@ function Get-XsnapshotDesktopInventory {
     $desktop = [ordered]@{
         env = "SESSIONNAME=$session"
         session = $session
-        hyprland = $null
-        monitors = @($monitors)
-        bindings = $null
+        monitors = @($monitors.ToArray())
         theme = $theme
-        waybar = $null
         locale = "culture=$locale ui=$uiLocale"
         time = "timezone=$tz offset=$tzOffset"
         audio = 'Windows audio device names omitted'
     }
+    $desktop['hyprland'] = $null
+    $desktop['bindings'] = $null
+    $desktop['waybar'] = $null
     $text = @(
         "session=$session",
         "theme=$theme",
