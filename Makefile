@@ -11,6 +11,7 @@ help:
 	@echo "  validate  validate the newest snapshot and its artifact hashes  (./bin/xsnapshot validate)"
 	@echo "  test      run the unit tests  (python3 -m unittest discover -s tests -v)"
 	@echo "  check     run the tests, then validate the newest snapshot"
+	@echo "  Windows:  see docs/WINDOWS.md (bin/xsnapshot.ps1 collect)"
 
 snapshot:
 	./bin/xsnapshot collect

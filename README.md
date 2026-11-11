@@ -17,15 +17,22 @@
 ## About xsnapshot-pc
 
 xsnapshot-pc records a single Linux workstation as a reviewable, sanitized tree that can be
-diffed against a later capture. The collector is deliberately boring: Python 3 standard
+diffed against a later capture. The Linux collector is deliberately boring: Python 3 standard
 library only, read-only inventory commands, no upload, no package installation, no mutation of
-the host. An optional, separate tool can push the state folder to a private GitHub repository
+the host. A native Windows collector (`bin/xsnapshot.ps1`, documented in
+[`docs/WINDOWS.md`](docs/WINDOWS.md)) emits the same `xsnapshot/v1` schema from PowerShell 5.1:
+allow-listed configuration, redacted secrets, Uninstall/winget/Appx inventories, services, and an
+`ARTIFACTS.sha256` seal. It is not a tagged release yet; run it from this checkout. The official
+`install.ps1` one-liner stays fail-closed until a reviewed tag is pinned. An optional, separate tool can push the state folder to a private GitHub repository
 the operator owns; the collector itself never does, and the tool's `init` never overwrites an
 existing `README.md` in that folder (see [`docs/PRIVATE-REPO.md`](docs/PRIVATE-REPO.md)).
 
 | Path | Purpose |
 |---|---|
 | `bin/xsnapshot` | Thin bash entry point; pins `--root` to this repository and execs the collector. |
+| `bin/xsnapshot.ps1` | Windows entry point; loads `lib/XSnapshot.ps1` and runs collect/validate/list/preflight. |
+| `lib/XSnapshot.ps1` | Native Windows collector (PowerShell 5.1): allow-list, redaction, package/service inventory. |
+| `install.ps1` | Windows bootstrap. From a checkout it runs the local collector; piped, it is fail-closed until a tag is pinned. |
 | `lib/xsnapshot.py` | The collector: allow-listed file copy, redaction, command inventory, report/JSON writers. |
 | `bin/xsnapshot-repo` | Optional second entry point; execs the private-repository tool. Not used by the collector. |
 | `lib/xsnapshot_repo.py` | The private-repository tool: one git commit per snapshot, privacy checks, `gh`/remote handling. |
