@@ -72,10 +72,11 @@ class WindowsCollectorSourcesTest(unittest.TestCase):
     def test_library_declares_windows_collector_version(self) -> None:
         text = (ROOT / "lib/XSnapshot.ps1").read_text(encoding="utf-8")
         self.assertIn("xsnapshot/v1", text)
-        self.assertIn("1.2.0-windows", text)
+        self.assertIn("1.2.1-windows", text)
         self.assertIn("function Invoke-XsnapshotCollect", text)
         self.assertIn("function Invoke-XsnapshotValidate", text)
         self.assertIn("Get-AppxPackage", text)
+        self.assertIn("ConvertFrom-XsnapshotInventoryText", text)
         self.assertIn("Win32_Service", text)
 
 

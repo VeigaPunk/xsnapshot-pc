@@ -44,3 +44,12 @@ jobs:
           $report = Get-Content -Raw "$env:RUNNER_TEMP\xsnapshot-data\snapshots\ci-windows-runner\REPORT.md"
           if ($report -match $env:USERNAME) { throw 'REPORT.md still contains the runner account name' }
           if ($report -match [regex]::Escape($env:USERPROFILE)) { throw 'REPORT.md still contains the profile path' }
+          $uuidRe = [regex]'\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b'
+          $snapRoot = "$env:RUNNER_TEMP\xsnapshot-data\snapshots\ci-windows-runner"
+          $json = Get-Content -Raw (Join-Path $snapRoot 'data\snapshot.json')
+          if ($uuidRe.IsMatch($json)) { throw 'data/snapshot.json still contains UUID shapes' }
+          $appx = Join-Path $snapRoot 'packages\appx.txt'
+          if (Test-Path -LiteralPath $appx) {
+            $appxText = Get-Content -Raw $appx
+            if ($uuidRe.IsMatch($appxText)) { throw 'packages/appx.txt still contains UUID shapes' }
+          }

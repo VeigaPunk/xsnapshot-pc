@@ -6,7 +6,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $script:Schema = 'xsnapshot/v1'
-$script:CollectorVersion = '1.2.0-windows'
+$script:CollectorVersion = '1.2.1-windows'
 $script:MaxConfigBytes = 1MB
 $script:MaxSnapshotBytes = 64MB
 $script:MaxSnapshotFiles = 4096
@@ -257,6 +257,14 @@ function ConvertFrom-XsnapshotRedact {
     $r = Invoke-XsnapshotRedact -Text $Text -ProtectVersions:$ProtectVersions
     $script:RedactionTotal += [int]$r.Count
     return $r.Text
+}
+
+function ConvertFrom-XsnapshotInventoryText {
+    # Package inventory lines use the same redaction rules as file bodies, but
+    # version-shaped tokens (N.N.N[.N]) are kept so dotted package versions are
+    # not rewritten as <ip>. GUID-named packages become <uuid>.
+    param([string]$Text)
+    return (ConvertFrom-XsnapshotRedact -Text $Text -ProtectVersions)
 }
 
 function Test-XsnapshotReparsePoint {
@@ -1003,7 +1011,7 @@ function Get-XsnapshotUninstallEntries {
             $ver = Get-XsnapshotFirst @((Get-XsnapshotProperty $p 'DisplayVersion')) ''
             $pub = Get-XsnapshotFirst @((Get-XsnapshotProperty $p 'Publisher')) ''
             $line = ($name.Trim() + ' ' + $ver + ' (' + $pub + ')').Trim()
-            $line = (Invoke-XsnapshotRedactIdentity -Text $line).Text
+            $line = ConvertFrom-XsnapshotInventoryText -Text $line
             $key = $line.ToLowerInvariant()
             if ($seen.ContainsKey($key)) { continue }
             $seen[$key] = $true
@@ -1024,8 +1032,7 @@ function Get-XsnapshotWingetPackages {
         if ($t -match '^\s*Name\s+Id\s+Version') { continue }
         if ($t -match '^The `msstore` source') { continue }
         if ($t -match '^\s*\d+\s+package') { continue }
-        $t = (Invoke-XsnapshotRedactIdentity -Text $t).Text
-        $t = (Invoke-XsnapshotRedact -Text $t).Text
+        $t = ConvertFrom-XsnapshotInventoryText -Text $t
         $lines.Add($t) | Out-Null
     }
     return [string[]]@($lines)
@@ -1040,7 +1047,7 @@ function Get-XsnapshotAppxPackages {
     $script:Commands.Add([ordered]@{ command = 'Get-AppxPackage'; started_at = (Get-Date).ToString('yyyy-MM-ddTHH:mm:ss'); returncode = 0; stdout_bytes = $pkgs.Count; stderr_bytes = 0 }) | Out-Null
     $lines = New-Object System.Collections.Generic.List[string]
     foreach ($p in ($pkgs | Sort-Object Name)) {
-        $line = '{0} {1}' -f $p.Name, $p.Version
+        $line = ConvertFrom-XsnapshotInventoryText -Text ('{0} {1}' -f $p.Name, $p.Version)
         $lines.Add($line) | Out-Null
     }
     return [string[]]@($lines)
@@ -1049,16 +1056,16 @@ function Get-XsnapshotAppxPackages {
 function Get-XsnapshotLanguagePackages {
     $chunks = New-Object System.Collections.Generic.List[string]
     $npm = Get-XsnapshotNativeOutput -FileName 'npm' -ArgumentList @('ls','-g','--depth=0') -Name 'npm ls -g --depth=0' -TimeoutSec 45
-    if ($npm) { $chunks.Add("## npm -g`n`n$((Invoke-XsnapshotRedact -Text $npm).Text)") | Out-Null }
+    if ($npm) { $chunks.Add("## npm -g`n`n$((ConvertFrom-XsnapshotInventoryText -Text $npm))") | Out-Null }
     $pip = Get-XsnapshotNativeOutput -FileName 'python' -ArgumentList @('-m','pip','list') -Name 'python -m pip list' -TimeoutSec 45
     if (-not $pip) { $pip = Get-XsnapshotNativeOutput -FileName 'py' -ArgumentList @('-3','-m','pip','list') -Name 'py -3 -m pip list' -TimeoutSec 45 }
-    if ($pip) { $chunks.Add("## pip`n`n$((Invoke-XsnapshotRedact -Text $pip).Text)") | Out-Null }
+    if ($pip) { $chunks.Add("## pip`n`n$((ConvertFrom-XsnapshotInventoryText -Text $pip))") | Out-Null }
     $cargo = Get-XsnapshotNativeOutput -FileName 'cargo' -ArgumentList @('install','--list') -Name 'cargo install --list' -TimeoutSec 30
-    if ($cargo) { $chunks.Add("## cargo`n`n$((Invoke-XsnapshotRedact -Text $cargo).Text)") | Out-Null }
+    if ($cargo) { $chunks.Add("## cargo`n`n$((ConvertFrom-XsnapshotInventoryText -Text $cargo))") | Out-Null }
     $choco = Get-XsnapshotNativeOutput -FileName 'choco' -ArgumentList @('list','-y') -Name 'choco list' -TimeoutSec 45
-    if ($choco) { $chunks.Add("## chocolatey`n`n$((Invoke-XsnapshotRedact -Text $choco).Text)") | Out-Null }
+    if ($choco) { $chunks.Add("## chocolatey`n`n$((ConvertFrom-XsnapshotInventoryText -Text $choco))") | Out-Null }
     $scoop = Get-XsnapshotNativeOutput -FileName 'scoop' -ArgumentList @('list') -Name 'scoop list' -TimeoutSec 30
-    if ($scoop) { $chunks.Add("## scoop`n`n$((Invoke-XsnapshotRedact -Text $scoop).Text)") | Out-Null }
+    if ($scoop) { $chunks.Add("## scoop`n`n$((ConvertFrom-XsnapshotInventoryText -Text $scoop))") | Out-Null }
     return ($chunks -join "`n`n")
 }
 
@@ -1240,7 +1247,7 @@ $($areaRows -join "`n")
 
 - ``all``: Windows Uninstall registry entries (HKLM 64-bit, HKLM 32-bit, HKCU), as ``Name Version (Publisher)``.
 - ``explicit``: ``winget list`` lines (Id, version and source when winget is present).
-- ``foreign``: ``Get-AppxPackage`` Name and Version. This is not a claim that a package is untrusted.
+- ``foreign``: ``Get-AppxPackage`` Name and Version. GUID-shaped names are written as ``<uuid>``. This is not a claim that a package is untrusted.
 - Extra inventories (npm -g, pip, cargo, chocolatey, scoop) are recorded under ``packages/language.txt`` when those tools are present.
 
 ## Coverage and limits
@@ -1460,6 +1467,15 @@ function Invoke-XsnapshotCollect {
     $script:Data.artifacts = @($script:Artifacts | Sort-Object { $_.path })
     $jsonText = ConvertTo-XsnapshotJson -Value $script:Data
     $jsonText = (Invoke-XsnapshotRedactIdentity -Text $jsonText).Text
+    # Defense in depth: inventory lists are already redacted, but any UUID
+    # shape that still reached the JSON (GUID-named packages or similar) must
+    # not be published.
+    $uuidRe = [regex]'\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b'
+    $uuidHits = $uuidRe.Matches($jsonText)
+    if ($uuidHits.Count -gt 0) {
+        $jsonText = $uuidRe.Replace($jsonText, '<uuid>')
+        $script:RedactionTotal += [int]$uuidHits.Count
+    }
     Write-XsnapshotText -Rel 'data/snapshot.json' -Text $jsonText
     Write-XsnapshotManifest
     Write-Host ("done: {0} artifacts, {1} redactions" -f $script:Artifacts.Count, $script:RedactionTotal)

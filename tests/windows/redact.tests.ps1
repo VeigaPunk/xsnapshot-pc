@@ -68,6 +68,18 @@ Assert-True ($json -match '"schema": "xsnapshot/v1"') 'json encoder writes schem
 Assert-True ($json -match '"ok": true') 'json encoder writes lowercase true'
 Assert-True ($json -notmatch 'NaN|Infinity') 'json encoder has no non-finite numbers'
 
+$invUuid = '1527c705-839a-4832-9118-54d4Bd6a0c89'
+$inv = ConvertFrom-XsnapshotInventoryText -Text ($invUuid + ' 10.0.19640.1000')
+Assert-True ($inv -notmatch $invUuid) 'inventory GUID-named package is removed'
+Assert-True ($inv -match '<uuid>') 'inventory GUID-named package becomes <uuid>'
+Assert-True ($inv -match '10\.0\.19640\.1000') 'inventory keeps the exact package version'
+
+$invVer = ConvertFrom-XsnapshotInventoryText -Text 'Eclipse Temurin JDK 21.0.12.1+1 (x64) 21.0.12.101 (Eclipse Adoptium)'
+Assert-True ($invVer -match '21\.0\.12\.1') 'IPv4-shaped package version is kept'
+Assert-True ($invVer -match '21\.0\.12\.101') 'second IPv4-shaped package version is kept'
+Assert-True ($invVer -notmatch '<ip>') 'package versions are not rewritten as <ip>'
+
+
 if ($script:Failures -gt 0) {
     Write-Host "$script:Passes passed, $script:Failures failed"
     exit 1

@@ -64,7 +64,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\bin\xsnapshot.ps1 --root $
 |---|---|
 | `all` | Uninstall registry entries: `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall`, the Wow6432Node view, and the HKCU Uninstall key. Each line is `Name Version (Publisher)`. |
 | `explicit` | `winget list --disable-interactivity --accept-source-agreements`, when `winget` is on `PATH`. Empty, with a note, when it is not. |
-| `foreign` | `Get-AppxPackage` as `Name Version`. This is the Appx/MSIX inventory, not a trust judgement. |
+| `foreign` | `Get-AppxPackage` as `Name Version`. GUID-shaped names are written as `<uuid>`; exact versions are kept. This is the Appx/MSIX inventory, not a trust judgement. |
 
 npm (`-g`), pip, cargo, Chocolatey and Scoop inventories, when those tools are
 present, are written to `packages/language.txt` and are not folded into the
@@ -97,7 +97,8 @@ outside this list.
 The same shapes the Linux collector redacts, plus Windows-specific ones:
 
 - IPv4, IPv6 and MAC addresses (colon and hyphen forms)
-- UUID/GUID, MachineGuid, ProductId
+- UUID/GUID, MachineGuid, ProductId, including GUID-named Appx/MSIX packages
+  in the package inventory lists and in `data/snapshot.json` (`<uuid>`)
 - Hardware serial lines
 - Bearer tokens, JSON/key-value/environment secret assignments, `org-` ids
 - Email addresses
@@ -106,8 +107,9 @@ The same shapes the Linux collector redacts, plus Windows-specific ones:
   with `user` and `C:\Users\user` (or `C:/Users/user` when the original used
   slashes)
 
-The hostname, hardware model names, package names and versions, and service
-names are kept, as on Linux. Redaction is defense in depth; the allow-list is
+The hostname, hardware model names, package names and exact versions, and
+service names are kept, as on Linux. Dotted package versions are not rewritten
+as addresses. Redaction is defense in depth; the allow-list is
 the primary control. Review `REPORT.md` and the copied files before sharing.
 
 ## Publishing
